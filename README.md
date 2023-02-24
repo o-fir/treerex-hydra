@@ -11,3 +11,9 @@
 
 # General workflow
   ![logic](https://user-images.githubusercontent.com/99724660/221208016-01a6a56d-a786-46f0-bd95-476eb04e39b5.png)
+
+# Additional info
+
+1. Benchmarks are already available in the project. Use ONLY them
+2. The planner takes 3 arguments - [SOLVER] [DOMAIN] [PROBLEM]
+3. The project currently does preprocessing ony. Constraint encoding is **TODO**
