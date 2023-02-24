@@ -16,4 +16,8 @@
 
 1. Benchmarks are already available in the project. Use ONLY them
 2. The planner takes 3 arguments - [SOLVER] [DOMAIN] [PROBLEM]
-3. The project currently does preprocessing ony. Constraint encoding is **TODO**
+
+# TODO
+1. Add preprocessing from SMT (JAVA side)
+2. Identify and implement necessary Constraint data structures and Constraint.toString() functions
+3. Use Constraints to encode TreeRex rules
