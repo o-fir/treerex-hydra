@@ -4,6 +4,8 @@ import java.util.List;
 
 import treerex.hydra.DataStructures.HydraConstraint;
 import treerex.hydra.DataStructures.IntVar;
+import treerex.hydra.Hydra;
+import treerex.hydra.DataStructures.SolverType;
 
 public class Rule5Constraint_EXAMPLE extends HydraConstraint {
 
@@ -44,25 +46,32 @@ public class Rule5Constraint_EXAMPLE extends HydraConstraint {
     }
 
     public String toString() {
+        if (Hydra.solver == SolverType.CSP) {
+            String tmpPrecs = "";
+            for (int i = 0; i < posPrecVars.size(); i++) {
+                tmpPrecs += posPrecVars.get(i).getName() + "=" + posPrecVals.get(i) + "/\\";
+            }
+            for (int i = 0; i < negPrecVars.size(); i++) {
+                tmpPrecs += negPrecVars.get(i).getName() + "!=" + negPrecVals.get(i) + "/\\";
+            }
+            for (int i = 0; i < posEffVars.size(); i++) {
+                tmpPrecs += posEffVars.get(i).getName() + "=" + posEffVals.get(i) + "/\\";
+            }
+            for (int i = 0; i < negEffVars.size(); i++) {
+                tmpPrecs += negEffVars.get(i).getName() + "!=" + negEffVals.get(i) + "/\\";
+            }
+            tmpPrecs += "true";
+            String tmp = "constraint " + ifVar.getName() + "=" + (ifVal + 1) + " -> " + tmpPrecs
+                    + ";\n";
 
-        String tmpPrecs = "";
-        for (int i = 0; i < posPrecVars.size(); i++) {
-            tmpPrecs += posPrecVars.get(i).getName() + "=" + posPrecVals.get(i) + "/\\";
-        }
-        for (int i = 0; i < negPrecVars.size(); i++) {
-            tmpPrecs += negPrecVars.get(i).getName() + "!=" + negPrecVals.get(i) + "/\\";
-        }
-        for (int i = 0; i < posEffVars.size(); i++) {
-            tmpPrecs += posEffVars.get(i).getName() + "=" + posEffVals.get(i) + "/\\";
-        }
-        for (int i = 0; i < negEffVars.size(); i++) {
-            tmpPrecs += negEffVars.get(i).getName() + "!=" + negEffVals.get(i) + "/\\";
-        }
-        tmpPrecs += "true";
-        String tmp = "constraint " + ifVar.getName() + "=" + (ifVal + 1) + " -> " + tmpPrecs
-                + ";\n";
+            return tmp;
 
-        return tmp;
+        } else if (Hydra.solver == SolverType.SMT) {
+            return XXXXXXXXXXXX
+        } else if (Hydra.solver == SolverType.SAT) {
+            return XXXXXXXXXXXX
+        }
+        return "N/A";
 
     }
 }
