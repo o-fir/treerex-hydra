@@ -37,17 +37,20 @@ public class ArithmeticConstraint extends HydraConstraint {
                 return "constraint " + leftHandVar.getName() + operator + rightHandVar.getName() + ";\n";
             }
         } else if (Hydra.solver == SolverType.SMT) {
+            // TODO implement SMT solver
             if (rightHandVar == null) {
-                return XXXXXXXXXXXXX
-            }else{
-                return XXXXXXXXXXXXX
+                return "(assert (" + operator + " " + leftHandVar.getName() + " " + constantVal + "))\n";
+            } else {
+                return "(assert (" + operator + " " + leftHandVar.getName() + " " + rightHandVar.getName() + "))\n";
             }
-        } else if (Hydra.solver == SolverType.SAT) {
-            if (rightHandVar == null) {
-                return XXXXXXXXXXXXX
-            }else{
-                return XXXXXXXXXXXXX
-            }
+        } else { // if (Hydra.solver == SolverType.SAT) {
+            // TODO implement SAT solver
+            return "";
+            // if (rightHandVar == null) {
+            //     return XXXXXXXXXXXXX
+            // }else{
+            //     return XXXXXXXXXXXXX
+            // }
         }
     }
 

@@ -2,6 +2,7 @@ package treerex.hydra.Encoder;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -55,7 +56,8 @@ public class ProblemEncoder {
         String DPath = args[1];
         String PPath = args[2];
 
-        String solutionPath = Hydra.projectDir + "/output/solution.txt";
+        // String solutionPath = Hydra.projectDir + "/output/solution.txt";
+        String solutionPath = "output/solution.txt";
 
         allVariables = new ArrayList<IntVar[]>();
         allCliques = new ArrayList<IntVar[][]>();
@@ -155,80 +157,147 @@ public class ProblemEncoder {
             // between files
             // minizinc simply concatenates the files and process the result file as usual
             // see: https://www.minizinc.org/doc-2.6.4/en/spec.html MODEL INSTANCE FILES
-            for (int i = 0; i < allVariables.size(); i++) {
-                String outputPath = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/vars_layer_" + i + ".mzn";
-                File file = new File(outputPath);
+
+            String mainOutputFile;
+
+            if (Hydra.solver == SolverType.CSP) {
+
+                for (int i = 0; i < allVariables.size(); i++) {
+                    String outputPath = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/vars_layer_" + i + ".mzn";
+                    File file = new File(outputPath);
+                    try (BufferedOutputStream pw = new BufferedOutputStream(
+                            new FileOutputStream(outputPath))) {
+                        IntVar[] layerVars = allVariables.get(i);
+                        IntVar[][] layerCliques = allCliques.get(i);
+
+                        // layer variables (e.g. cell(0,0) = deliver(pack0, truck0, city1))
+                        for (IntVar var : layerVars) {
+                            pw.write(var.toString().getBytes());
+                        }
+                        // predicate variables (e.g. clique(0,0,0) = truck0_at_city0)
+                        for (IntVar[] cellCliques : layerCliques) {
+                            for (IntVar var : cellCliques) {
+                                pw.write(var.toString().getBytes());
+                            }
+                        }
+                        pw.close();
+
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+
+                // WRITE ALL CONSTRAINTS TO FILES
+                // 1 file per layer
+                for (int i = 0; i < constraintsPerLayer.size(); i++) {
+                    String outputPath = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/constraints_layer_" + i
+                            + ".mzn";
+                    try (BufferedOutputStream pw = new BufferedOutputStream(
+                            new FileOutputStream(outputPath))) {
+                        for (HydraConstraint c : constraintsPerLayer.get(i)) {
+                            pw.write(c.toString().getBytes());
+                        }
+
+                        pw.close();
+
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+
+                // WRITE FINAL LAYER CONSTRAINTS
+
+                String finalLayerPath = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/finalLayer.mzn";
                 try (BufferedOutputStream pw = new BufferedOutputStream(
-                        new FileOutputStream(outputPath))) {
+                        new FileOutputStream(finalLayerPath))) {
+                    for (HydraConstraint c : finalLayerConstraints) {
+                        pw.write(c.toString().getBytes());
+                    }
+                }
+                // WRITE THE MAIN FILE
+                // includes all constraints + all variables
+
+                mainOutputFile = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/main.mzn";
+                try (BufferedOutputStream pw = new BufferedOutputStream(
+                        new FileOutputStream(mainOutputFile))) {
+                    for (int i = 0; i < layers.size(); i++) {
+                        pw.write(("include \"C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/constraints_layer_" + i
+                                + ".mzn\";").getBytes());
+                        pw.write(("include \"C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/vars_layer_" + i
+                                + ".mzn\";").getBytes());
+                    }
+
+                    pw.write(("include \"" + finalLayerPath + "\";").getBytes());
+
+                    pw.close();
+
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+            } else if (Hydra.solver == SolverType.SMT) {
+
+                BufferedWriter writer;
+
+                mainOutputFile = "output.SMT";
+
+                writer = new BufferedWriter(new FileWriter(mainOutputFile));
+        
+                // Set the logic of the solver 
+                writer.write("(set-logic QF_UFLIA)\n");
+
+                // Indicate the solver to produce the model
+                writer.write("(set-option :produce-models true)\n");
+
+                // Declare all the variables
+                for (int i = 0; i < allVariables.size(); i++) {
                     IntVar[] layerVars = allVariables.get(i);
                     IntVar[][] layerCliques = allCliques.get(i);
 
                     // layer variables (e.g. cell(0,0) = deliver(pack0, truck0, city1))
                     for (IntVar var : layerVars) {
-                        pw.write(var.toString().getBytes());
+                        writer.write("(declare-const " + var.getName() + " Int)\n");
+                        // Declare the domain of the variable as well 
+                        writer.write("(assert (or ");
+                        for (Integer domainValue : var.getDomain()) {
+                            writer.write(" (= " + var.getName() + " " + domainValue + ")");
+                        }
+                        writer.write("))\n");
                     }
                     // predicate variables (e.g. clique(0,0,0) = truck0_at_city0)
                     for (IntVar[] cellCliques : layerCliques) {
                         for (IntVar var : cellCliques) {
-                            pw.write(var.toString().getBytes());
+                            writer.write("(declare-const " + var.getName() + " Int)\n");
+                            // Declare the domain of the variable as well 
+                            writer.write("(assert (or ");
+                            for (Integer domainValue : var.getDomain()) {
+                                writer.write(" (= " + var.getName() + " " + domainValue + ")");
+                            }
+                            writer.write("))\n");
                         }
                     }
-                    pw.close();
-
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
                 }
-            }
 
-            // WRITE ALL CONSTRAINTS TO FILES
-            // 1 file per layer
-            for (int i = 0; i < constraintsPerLayer.size(); i++) {
-                String outputPath = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/constraints_layer_" + i
-                        + ".mzn";
-                try (BufferedOutputStream pw = new BufferedOutputStream(
-                        new FileOutputStream(outputPath))) {
+                // Write all the constraints
+                for (int i = 0; i < constraintsPerLayer.size(); i++) {
                     for (HydraConstraint c : constraintsPerLayer.get(i)) {
-                        pw.write(c.toString().getBytes());
+                        writer.write(c.toString());
                     }
-
-                    pw.close();
-
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
                 }
-            }
-
-            // WRITE FINAL LAYER CONSTRAINTS
-
-            String finalLayerPath = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/finalLayer.mzn";
-            try (BufferedOutputStream pw = new BufferedOutputStream(
-                    new FileOutputStream(finalLayerPath))) {
                 for (HydraConstraint c : finalLayerConstraints) {
-                    pw.write(c.toString().getBytes());
-                }
-            }
-            // WRITE THE MAIN FILE
-            // includes all constraints + all variables
-
-            String problemPath = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/main.mzn";
-            try (BufferedOutputStream pw = new BufferedOutputStream(
-                    new FileOutputStream(problemPath))) {
-                for (int i = 0; i < layers.size(); i++) {
-                    pw.write(("include \"C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/constraints_layer_" + i
-                            + ".mzn\";").getBytes());
-                    pw.write(("include \"C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/vars_layer_" + i
-                            + ".mzn\";").getBytes());
+                    writer.write(c.toString());
                 }
 
-                pw.write(("include \"" + finalLayerPath + "\";").getBytes());
-
-                pw.close();
-
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                writer.write("(check-sat)\n");
+                writer.write("(get-model)\n");
+                writer.write("(exit)\n");
+                writer.flush();
+                writer.close();
+            } else {
+                mainOutputFile = "blabla.dimacs";
             }
 
             ///////////////////
@@ -240,12 +309,17 @@ public class ProblemEncoder {
             // Call solver
             String cmd;
             if (Hydra.solver == SolverType.CSP) {
-                cmd = "minizinc --solver chuffedDebug -s -t " + timeoutInMs + " " + problemPath;
+                cmd = "minizinc --solver chuffedDebug -s -t " + timeoutInMs + " " + mainOutputFile;
             } else if (Hydra.solver == SolverType.SMT) {
-                cmd = XXXXXXXXXXXXXXXXXX;
-            } else if (Hydra.solver == SolverType.SAT) {
-                cmd = XXXXXXXXXXXXXXXXXX;
+                //-smt2 to use parser for smt2 -st to get statistics and -T to set timeout
+                cmd = "z3 -smt2 -st -T:" + Math.round((timeoutInMs/1000)) + " " + mainOutputFile; 
+            } else {
+                cmd = "command sat solver";
             }
+            // TODO - add SAT solver
+            // else if (Hydra.solver == SolverType.SAT) {
+            //     cmd = XXXXXXXXXXXXXXXXXX;
+            // }
 
             // Note: Output from command in terminal is saved to solutionPath
             // res[0] = 0 if problem UNSAT, res[0] = 1 if SAT
@@ -385,7 +459,7 @@ public class ProblemEncoder {
         int SAT = 1;
         float time = -1;
         Runtime rt = Runtime.getRuntime();
-        System.out.println("cmds: " + commands + " > " + solutionPath);
+        System.out.println("Command: " + cmd + " > " + solutionPath);
         Process proc = rt.exec(commands);
 
         // Read the output from the terminal
@@ -394,10 +468,11 @@ public class ProblemEncoder {
 
         // write whatever terminal outputs to solutionPath
         File file = new File(solutionPath);
-        PrintWriter pw = new PrintWriter(new FileWriter(file));
+        PrintWriter pw = new PrintWriter(file);
+        
         String s = null;
         while ((s = stdInput.readLine()) != null) {
-        if (Hydra.solver == SolverType.CSP) {
+            if (Hydra.solver == SolverType.CSP) {
                 if (!s.contains("%")) {
                     pw.write(s + "\n");
                 } else {
@@ -409,11 +484,29 @@ public class ProblemEncoder {
                 if (s.contains("UNSAT")) {
                     SAT = 0;
                 }
-        } else if (Hydra.solver == SolverType.SMT) {
-                XXXXXXXXXXXXXXXXXXXXXXXXXXX
-        }else if(Hydra.solver == SolverType.SAT){
-                XXXXXXXXXXXXXXXXXXXXXXXX
-        }}
+            } else if (Hydra.solver == SolverType.SMT) {
+
+                if (!s.contains(":")) {
+                    pw.write(s + "\n");
+                } else {
+                    if (s.contains("total-time")) {
+                        String totalTimeStr = s.split("   ")[1];
+                        // Remove the parenthesis at the end
+                        if (totalTimeStr.charAt(totalTimeStr.length() - 1) == ')') {
+                            totalTimeStr = totalTimeStr.substring(0, totalTimeStr.length() - 1);
+                        }
+                        time = Float.parseFloat(totalTimeStr);
+                    }
+                }
+                if (s.contains("unsat")) {
+                    SAT = 0;
+                }
+
+            } else if (Hydra.solver == SolverType.SAT) {
+                // TODO: implement SAT solver
+                throw new java.lang.UnsupportedOperationException("SAT IS NOT IMPLEMENTED YET.");
+            }
+        }
 
         // Read any errors from the attempted command
         while ((s = stdError.readLine()) != null) {

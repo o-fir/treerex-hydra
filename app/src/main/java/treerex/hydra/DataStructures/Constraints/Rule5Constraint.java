@@ -2,12 +2,17 @@ package treerex.hydra.DataStructures.Constraints;
 
 import java.util.List;
 
+import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.HydraConstraint;
 import treerex.hydra.DataStructures.IntVar;
-import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.SolverType;
 
-public class Rule5Constraint_EXAMPLE extends HydraConstraint {
+/**
+ * Rule 6: If an action is executed, then all its positive and negative
+ * preconditions must be
+ * true. In addition, all its positive and negative effects must be true.
+ */
+public class Rule5Constraint extends HydraConstraint {
 
     private IntVar ifVar;
     private int ifVal;
@@ -20,7 +25,7 @@ public class Rule5Constraint_EXAMPLE extends HydraConstraint {
     private List<IntVar> negEffVars;
     private List<Integer> negEffVals;
 
-    public Rule5Constraint_EXAMPLE(
+    public Rule5Constraint(
 
             IntVar ifVar,
             int ifVal,
@@ -46,6 +51,7 @@ public class Rule5Constraint_EXAMPLE extends HydraConstraint {
     }
 
     public String toString() {
+
         if (Hydra.solver == SolverType.CSP) {
             String tmpPrecs = "";
             for (int i = 0; i < posPrecVars.size(); i++) {
@@ -67,11 +73,38 @@ public class Rule5Constraint_EXAMPLE extends HydraConstraint {
             return tmp;
 
         } else if (Hydra.solver == SolverType.SMT) {
-            return XXXXXXXXXXXX
-        } else if (Hydra.solver == SolverType.SAT) {
-            return XXXXXXXXXXXX
-        }
-        return "N/A";
+            StringBuilder posPrecsStr = new StringBuilder("(and true ");
+            for (int i = 0; i < posPrecVars.size(); i++) {
+                posPrecsStr.append("(= " + posPrecVars.get(i).getName() + " " + posPrecVals.get(i) + ") ");
+            }
+            posPrecsStr.append(")");
 
+            StringBuilder negPrecsStr = new StringBuilder("(and true ");
+            for (int i = 0; i < negPrecVars.size(); i++) {
+                negPrecsStr.append("(not (= " + negPrecVars.get(i).getName() + " " + negPrecVals.get(i) + ")) ");
+            }
+            negPrecsStr.append(")");
+
+            StringBuilder posEffsStr = new StringBuilder("(and true ");
+            for (int i = 0; i < posEffVars.size(); i++) {
+                posEffsStr.append("(= " + posEffVars.get(i).getName() + " " + posEffVals.get(i) + ") ");
+            }
+            posEffsStr.append(")");
+
+            StringBuilder negEffsStr = new StringBuilder("(and true ");
+            for (int i = 0; i < negEffVars.size(); i++) {
+                negEffsStr.append("(not (= " + negEffVars.get(i).getName() + " " + negEffVals.get(i) + ")) ");
+            }
+            negEffsStr.append(")");
+
+            return "(assert (=> (= " + ifVar.getName() + " " + (ifVal + 1) + ") (and " + posPrecsStr.toString() + " "
+                    + negPrecsStr.toString() + " " + posEffsStr.toString() + " " + negEffsStr.toString() + ")))\n";
+
+        } else if (Hydra.solver == SolverType.SAT) {
+            // TODO: Implement SAT version
+            return "";
+        } else {
+            return "N/A";
+        }
     }
 }
