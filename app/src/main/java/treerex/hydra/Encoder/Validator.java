@@ -20,6 +20,7 @@ import fr.uga.pddl4j.problem.operator.Method;
 import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.DataStructures.Layer;
+import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.HelperFunctions.PrintFunctions;
 
 public class Validator {
@@ -36,16 +37,63 @@ public class Validator {
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
-                // process the line
-                line = line.substring(0, line.length() - 1);// remove ";"
-                if (line.contains("=") && line.contains("_") && !line.contains("b")) {
-                    String[] data = line.split(" = ");
-                    String[] key = data[0].split("_");
-                    String name = data[0];
-                    int value = Integer.parseInt(data[1]);
+
+
+                if (line.isEmpty()) {
+                    continue;
+                }
+
+                if (Hydra.solver == SolverType.CSP) {
+
+                    // process the line
+                    line = line.substring(0, line.length() - 1);// remove ";"
+                    if (line.contains("=") && line.contains("_") && !line.contains("b")) {
+                        String[] data = line.split(" = ");
+                        String[] key = data[0].split("_");
+                        String name = data[0];
+                        int value = Integer.parseInt(data[1]);
+                        int layer = Integer.parseInt(key[1]);
+                        int cell = Integer.parseInt(key[2]);
+                        // "c" for cell, p for predicate
+                        if (name.contains("c")) {
+                            ProblemEncoder.allVariables.get(layer)[cell].setSolutionValue(value);
+
+                        } else if (name.contains("p_")) {
+                            int clique = Integer.parseInt(key[3]);
+                            ProblemEncoder.allCliques.get(layer)[cell][clique].setSolutionValue(value);
+
+                        }
+                    }
+                }
+
+                else if (Hydra.solver == SolverType.SMT) {
+                    // process the line for the SMT solver
+                    if (!line.contains("define-fun")) {
+                        continue;
+                    }
+                    // Get the name of the variable
+                    String[] data = line.split(" ");
+                    String name = data[3];
+                    // The value is in the next line
+                    String lineValue = br.readLine();
+                    String[] dataLineValue = lineValue.split(" ");
+                    // Get the value
+                    boolean isNegative = dataLineValue.length == 6;
+                    int valueIdx = isNegative ? 5 : 4;
+                    int numParenthesisToRemove = 1;
+                    if (isNegative) {
+                        numParenthesisToRemove++;
+                    }
+                    String valueStr = dataLineValue[valueIdx].substring(0, dataLineValue[valueIdx].length() - numParenthesisToRemove);
+
+                    int value = Integer.parseInt(valueStr);
+                    if (isNegative) {
+                        value = -value;
+                    }
+                    String[] key = name.split("_");
                     int layer = Integer.parseInt(key[1]);
                     int cell = Integer.parseInt(key[2]);
-                    // "c" for cell, p for predicate
+
                     if (name.contains("c")) {
                         ProblemEncoder.allVariables.get(layer)[cell].setSolutionValue(value);
 
