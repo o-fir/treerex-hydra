@@ -53,19 +53,24 @@ public class Rule6Constraint extends HydraConstraint {
             return tmp;
 
         } else if (Hydra.solver == SolverType.SMT) {
-            StringBuilder posPrecsStr = new StringBuilder("(and true ");
+            StringBuilder posPrecsStr = new StringBuilder();
             for (int i = 0; i < posPrecVars.size(); i++) {
                 posPrecsStr.append("(= " + posPrecVars.get(i).getName() + " " + posPrecVals.get(i) + ") ");
             }
-            posPrecsStr.append(")");
 
-            StringBuilder negPrecsStr = new StringBuilder("(and true ");
+            StringBuilder negPrecsStr = new StringBuilder();
             for (int i = 0; i < negPrecVars.size(); i++) {
                 negPrecsStr.append("(not (= " + negPrecVars.get(i).getName() + " " + negPrecVals.get(i) + ")) ");
             }
-            negPrecsStr.append(")");
-            return "(assert (=> (= " + ifVar.getName() + " " + ((ifVal + 1) * -1) + ") (and " + posPrecsStr.toString() + " "
-                    + negPrecsStr.toString() + ")))\n";
+            // if (posPrecsStr.length() + negPrecsStr.length() != 0) 
+            // {
+                return "(assert (=> (= " + ifVar.getName() + " " + ((ifVal + 1) * -1) + ") (and true " + posPrecsStr.toString() + " "
+                + negPrecsStr.toString() + ")))\n";
+            // } else {
+            //     return "";
+            // }
+            
+
 
         } else if (Hydra.solver == SolverType.SAT) {
             // TODO: Implement SAT version
