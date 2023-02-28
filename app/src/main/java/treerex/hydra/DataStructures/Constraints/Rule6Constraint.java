@@ -64,7 +64,7 @@ public class Rule6Constraint extends HydraConstraint {
                 negPrecsStr.append("(not (= " + negPrecVars.get(i).getName() + " " + negPrecVals.get(i) + ")) ");
             }
             negPrecsStr.append(")");
-            return "(assert (=> (= " + ifVar.getName() + " " + (ifVal + 1) + ") (and " + posPrecsStr.toString() + " "
+            return "(assert (=> (= " + ifVar.getName() + " " + ((ifVal + 1) * -1) + ") (and " + posPrecsStr.toString() + " "
                     + negPrecsStr.toString() + ")))\n";
 
         } else if (Hydra.solver == SolverType.SAT) {

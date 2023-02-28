@@ -71,7 +71,11 @@ public class ProblemEncoder {
             allCliques.add(layerCliques);
         }
 
-        while (!isSAT) {
+        int maxLayer = 20;
+        int currentLayer = 0;
+
+
+        while (!isSAT && currentLayer < maxLayer) {
             // Begin creating constraints
             // Note: Constraints are stored separately for each layer.
             // This decision was made primarily because we use multiple-file structure in
@@ -353,12 +357,22 @@ public class ProblemEncoder {
                 allVariables.add(layerVariables);
                 allCliques.add(layerCliques);
                 ////////////////////////////
+
+                currentLayer++;
             }
 
             if ((int) ((System.nanoTime() - walltimeStart) / 1000000) > timeoutInMs) {
                 timeout = true;
                 break;
             }
+
+            
+        }
+
+        if (currentLayer == maxLayer) {
+            // TODO return a plan null
+            System.out.println("MAX LAYER REACHED");
+            System.exit(1);
         }
 
         // Parse solution
@@ -490,7 +504,8 @@ public class ProblemEncoder {
                     pw.write(s + "\n");
                 } else {
                     if (s.contains("total-time")) {
-                        String totalTimeStr = s.split("   ")[1];
+                        String[] split = s.split(" ");
+                        String totalTimeStr = split[split.length - 1];
                         // Remove the parenthesis at the end
                         if (totalTimeStr.charAt(totalTimeStr.length() - 1) == ')') {
                             totalTimeStr = totalTimeStr.substring(0, totalTimeStr.length() - 1);

@@ -65,20 +65,35 @@ public class Rule8Constraint extends HydraConstraint {
 
         } else if (Hydra.solver == SolverType.SMT) {
 
-            StringBuilder descructorActionStr = new StringBuilder("(or false ");
-            for (int destructorId : destructorActions) {
-                descructorActionStr.append("(= " + currentCellVar.getName() + " " + (destructorId + 1) + ")");
+            StringBuilder descructorActionStr = new StringBuilder();
+            
+            if (destructorActions.size() > 0) {
+                descructorActionStr.append("(or (< " + currentCellVar.getName() + " 0) ");
+                for (int destructorId : destructorActions) {
+                    descructorActionStr.append("(= " + currentCellVar.getName() + " " + (destructorId + 1) + ")");
+                }
+                descructorActionStr.append(") ");
             }
-            descructorActionStr.append(") ");
+            else {
+                descructorActionStr.append("(< " + currentCellVar.getName() + " 0)");
+            }
+
 
             String t2f = "(assert (=> (and (= " + currentCellCliqueVar.getName() + " " + predicateId + ") (not (= "
                     + nextCellCliqueVar.getName() + " " + predicateId + "))) " + descructorActionStr.toString() + "))\n";
 
-            StringBuilder creatorActionStr = new StringBuilder("(or false ");
-            for (int creatorId : creatorActions) {
-                creatorActionStr.append("(= " + currentCellVar.getName() + " " + (creatorId + 1) + ")");
+            StringBuilder creatorActionStr = new StringBuilder();
+
+            if (creatorActions.size() > 0) {
+                creatorActionStr.append("(or (< " + currentCellVar.getName() + " 0) ");
+                for (int creatorId : creatorActions) {
+                    creatorActionStr.append("(= " + currentCellVar.getName() + " " + (creatorId + 1) + ")");
+                }
+                creatorActionStr.append(") ");
             }
-            creatorActionStr.append(") ");
+            else {
+                creatorActionStr.append("(< " + currentCellVar.getName() + " 0)");
+            }
 
             String f2t = "(assert (=> (and (not (= " + currentCellCliqueVar.getName() + " " + predicateId + ")) (= "
                     + nextCellCliqueVar.getName() + " " + predicateId + ")) " + creatorActionStr.toString() + "))\n";
