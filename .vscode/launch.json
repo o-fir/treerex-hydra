@@ -22,6 +22,19 @@
 
             "mainClass": "treerex.hydra.Hydra",
             "projectName": "app"
+        },
+        {
+            "type": "java",
+            "name": "Launch Hydra CSP",
+            "request": "launch",
+            "args": [
+                "csp",
+                "benchmarks/ipc2020/total-order/Transport/domain.hddl",
+                "benchmarks/ipc2020/total-order/Transport/pfile01.hddl"
+            ],
+
+            "mainClass": "treerex.hydra.Hydra",
+            "projectName": "app"
         }
     ]
 }

@@ -56,8 +56,8 @@ public class ProblemEncoder {
         String DPath = args[1];
         String PPath = args[2];
 
-        // String solutionPath = Hydra.projectDir + "/output/solution.txt";
-        String solutionPath = "output/solution.txt";
+        String solutionPath = Hydra.projectDir + "/output/solution.txt";
+        // String solutionPath = "output/solution.txt"; <- gives error on windows
 
         allVariables = new ArrayList<IntVar[]>();
         allCliques = new ArrayList<IntVar[][]>();
@@ -73,7 +73,6 @@ public class ProblemEncoder {
 
         int maxLayer = 20;
         int currentLayer = 0;
-
 
         while (!isSAT && currentLayer < maxLayer) {
             // Begin creating constraints
@@ -167,7 +166,7 @@ public class ProblemEncoder {
             if (Hydra.solver == SolverType.CSP) {
 
                 for (int i = 0; i < allVariables.size(); i++) {
-                    String outputPath = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/vars_layer_" + i + ".mzn";
+                    String outputPath = Hydra.projectDir + "/minizincGenFiles/vars_layer_" + i + ".mzn";
                     File file = new File(outputPath);
                     try (BufferedOutputStream pw = new BufferedOutputStream(
                             new FileOutputStream(outputPath))) {
@@ -195,7 +194,7 @@ public class ProblemEncoder {
                 // WRITE ALL CONSTRAINTS TO FILES
                 // 1 file per layer
                 for (int i = 0; i < constraintsPerLayer.size(); i++) {
-                    String outputPath = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/constraints_layer_" + i
+                    String outputPath = Hydra.projectDir + "/minizincGenFiles/constraints_layer_" + i
                             + ".mzn";
                     try (BufferedOutputStream pw = new BufferedOutputStream(
                             new FileOutputStream(outputPath))) {
@@ -213,7 +212,7 @@ public class ProblemEncoder {
 
                 // WRITE FINAL LAYER CONSTRAINTS
 
-                String finalLayerPath = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/finalLayer.mzn";
+                String finalLayerPath = Hydra.projectDir + "/minizincGenFiles/finalLayer.mzn";
                 try (BufferedOutputStream pw = new BufferedOutputStream(
                         new FileOutputStream(finalLayerPath))) {
                     for (HydraConstraint c : finalLayerConstraints) {
@@ -223,13 +222,13 @@ public class ProblemEncoder {
                 // WRITE THE MAIN FILE
                 // includes all constraints + all variables
 
-                mainOutputFile = "C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/main.mzn";
+                mainOutputFile = Hydra.projectDir + "/minizincGenFiles/main.mzn";
                 try (BufferedOutputStream pw = new BufferedOutputStream(
                         new FileOutputStream(mainOutputFile))) {
                     for (int i = 0; i < layers.size(); i++) {
-                        pw.write(("include \"C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/constraints_layer_" + i
+                        pw.write(("include \"" + Hydra.projectDir + "/minizincGenFiles/constraints_layer_" + i
                                 + ".mzn\";").getBytes());
-                        pw.write(("include \"C:/Users/oleksandr.firsov/Desktop/minizincGenFiles/vars_layer_" + i
+                        pw.write(("include \"" + Hydra.projectDir + "/minizincGenFiles/vars_layer_" + i
                                 + ".mzn\";").getBytes());
                     }
 
@@ -249,8 +248,8 @@ public class ProblemEncoder {
                 mainOutputFile = "output.SMT";
 
                 writer = new BufferedWriter(new FileWriter(mainOutputFile));
-        
-                // Set the logic of the solver 
+
+                // Set the logic of the solver
                 writer.write("(set-logic QF_UFLIA)\n");
 
                 // Indicate the solver to produce the model
@@ -264,7 +263,7 @@ public class ProblemEncoder {
                     // layer variables (e.g. cell(0,0) = deliver(pack0, truck0, city1))
                     for (IntVar var : layerVars) {
                         writer.write("(declare-const " + var.getName() + " Int)\n");
-                        // Declare the domain of the variable as well 
+                        // Declare the domain of the variable as well
                         writer.write("(assert (or ");
                         for (Integer domainValue : var.getDomain()) {
                             writer.write(" (= " + var.getName() + " " + domainValue + ")");
@@ -275,7 +274,7 @@ public class ProblemEncoder {
                     for (IntVar[] cellCliques : layerCliques) {
                         for (IntVar var : cellCliques) {
                             writer.write("(declare-const " + var.getName() + " Int)\n");
-                            // Declare the domain of the variable as well 
+                            // Declare the domain of the variable as well
                             writer.write("(assert (or ");
                             for (Integer domainValue : var.getDomain()) {
                                 writer.write(" (= " + var.getName() + " " + domainValue + ")");
@@ -315,14 +314,14 @@ public class ProblemEncoder {
             if (Hydra.solver == SolverType.CSP) {
                 cmd = "minizinc --solver chuffedDebug -s -t " + timeoutInMs + " " + mainOutputFile;
             } else if (Hydra.solver == SolverType.SMT) {
-                //-smt2 to use parser for smt2 -st to get statistics and -T to set timeout
-                cmd = "z3 -smt2 -st -T:" + Math.round((timeoutInMs/1000)) + " " + mainOutputFile; 
+                // -smt2 to use parser for smt2 -st to get statistics and -T to set timeout
+                cmd = "z3 -smt2 -st -T:" + Math.round((timeoutInMs / 1000)) + " " + mainOutputFile;
             } else {
                 cmd = "command sat solver";
             }
             // TODO - add SAT solver
             // else if (Hydra.solver == SolverType.SAT) {
-            //     cmd = XXXXXXXXXXXXXXXXXX;
+            // cmd = XXXXXXXXXXXXXXXXXX;
             // }
 
             // Note: Output from command in terminal is saved to solutionPath
@@ -366,7 +365,6 @@ public class ProblemEncoder {
                 break;
             }
 
-            
         }
 
         if (currentLayer == maxLayer) {
@@ -380,6 +378,8 @@ public class ProblemEncoder {
 
         // PandaPIvalidator output
         String output = Validator.printPandaOutput(allVariables, layers, problem);
+        System.out.println("SOLUTION:");
+        System.out.println(output);
 
         int walltimeInMs = (int) ((System.nanoTime() - walltimeStart)
                 / 1000000);
@@ -483,7 +483,7 @@ public class ProblemEncoder {
         // write whatever terminal outputs to solutionPath
         File file = new File(solutionPath);
         PrintWriter pw = new PrintWriter(file);
-        
+
         String s = null;
         while ((s = stdInput.readLine()) != null) {
             if (Hydra.solver == SolverType.CSP) {

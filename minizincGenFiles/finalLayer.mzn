@@ -1,0 +1,13 @@
+constraint c_2_0>=0;
+constraint c_2_1>=0;
+constraint c_2_2>=0;
+constraint c_2_3>=0;
+constraint c_2_4>=0;
+constraint c_2_5>=0;
+constraint c_2_6>=0;
+constraint c_2_7>=0;
+constraint c_2_8>=0;
+constraint c_2_9>=0;
+constraint c_2_10>=0;
+constraint c_2_11>=0;
+constraint c_2_12>=0;

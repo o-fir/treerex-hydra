@@ -31,13 +31,13 @@ public class Hydra {
 
     public static void main(String[] args) {
 
+        String s = System.getProperty("user.dir");
+        projectDir = s.replaceAll("\\\\", "/");
         // Checks the number of arguments from the command line
         // If no arguments - we will run the planner on Transport p0.
         // Useful, if we want to quickly debug the program
         if (args.length == 0) {
             System.out.println("No args. Running on ipc2020 TO Transport p0");
-            String s = System.getProperty("user.dir");
-            projectDir = s.replaceAll("\\\\", "/");
             String dom = projectDir + "/benchmarks/ipc2020/total-order/Transport/domain.hddl";
             String p = projectDir + "/benchmarks/ipc2020/total-order/Transport/pfile01.hddl";
             args = new String[] {
