@@ -21,3 +21,15 @@
 1. Add preprocessing from SMT (JAVA side)
 2. Identify and implement necessary Constraint data structures and Constraint.toString() functions
 3. Use Constraints to encode TreeRex rules
+
+# Build
+
+```bash
+./gradlew build
+```
+
+# Run 
+
+```bash
+./gradlew run --args="[smt|csp|sat] <domain_file> <problem_file>"
+```
