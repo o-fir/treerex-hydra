@@ -64,13 +64,31 @@ public class Validator {
         int counter = 0;
         // Part 1. Primitive actions of the final layer AKA the plan
         IntVar[] lastLayer = allVariables.get(allVariables.size() - 1);
-        for (IntVar v : lastLayer) {
+        for (int i = 0; i < lastLayer.length; i++) {
+            IntVar v = lastLayer[i];
             // ignore noop cells
             if (v.getValue() != 0) {
                 int parsedVal = v.getValue() - 1;// shift the id
                 out += counter + " " + PrintFunctions.actionToString(parsedVal, problem) + "\n";
-                v.setPandaID(counter);
+                allVariables.get(allVariables.size() - 1)[i].setPandaID(counter);
                 counter++;
+            }
+        }
+        // Part 1.2. Propagate pandaIDs from primitive actions in last layer to all
+        // layers above until we hit a parent method
+
+        // go through every layer N-1 to 0
+        for (int layerPointer = allVariables.size() - 2; layerPointer > 0; layerPointer--) {
+            // go through every cell of the said layer
+            for (int cellIterator = 0; cellIterator < allVariables.get(layerPointer).length - 1; cellIterator++) {
+                // if the cell is a primitive action assign its pandaID based on the pandaID of
+                // its child
+                IntVar tgt = allVariables.get(layerPointer)[cellIterator];
+                IntVar child = allVariables.get(layerPointer + 1)[network.get(layerPointer).getNext(cellIterator)];
+                if (tgt.getValue() > 0 && tgt.getPandaID() == null) {
+                    tgt.setPandaID(child.getPandaID());
+
+                }
             }
         }
         // Part 2. Root
@@ -93,7 +111,7 @@ public class Validator {
             for (int cellId = 0; cellId < layer.length; cellId++) {
                 IntVar v = layer[cellId];
                 if (v.getPandaID() == null) {
-                    v.setPandaID(counter);
+                    allVariables.get(layerId)[cellId].setPandaID(counter);
                     counter++;
                 }
                 // Case A. Cell is a method
@@ -118,7 +136,8 @@ public class Validator {
                         // skip noops
                         if (iterCell.getValue() != 0) {
                             if (iterCell.getPandaID() == null) {
-                                iterCell.setPandaID(counter);
+                                allVariables.get(layerId + 1)[network.get(layerId).getNext(cellId) + iter]
+                                        .setPandaID(counter);
                                 counter++;
                             }
                             children += iterCell.getPandaID() + " ";
