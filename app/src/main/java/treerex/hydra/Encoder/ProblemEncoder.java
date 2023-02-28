@@ -381,6 +381,16 @@ public class ProblemEncoder {
         System.out.println("SOLUTION:");
         System.out.println(output);
 
+        // Write the plan to file and verify it
+        boolean planIsValid = Validator.validatePlan(output, DPath, PPath);
+
+        if (planIsValid) {
+            System.out.println("=== PLAN IS VALID ===");
+        } else {
+            System.out.println("=== PLAN IS INVALID ===");
+        }
+
+
         int walltimeInMs = (int) ((System.nanoTime() - walltimeStart)
                 / 1000000);
         System.out.println(solveTimeCumul);
