@@ -38,6 +38,11 @@ public class Validator {
             String line;
             while ((line = br.readLine()) != null) {
 
+                // If it is an empty line, continue
+                if (line.isEmpty()) {
+                    continue;
+                }
+
                 if (Hydra.solver == SolverType.CSP) {
                     // process the line for the CSP solver
                     line = line.substring(0, line.length() - 1);// remove ";"
@@ -162,8 +167,9 @@ public class Validator {
                             if (iterCell.getPandaID() == null) {
                                 iterCell.setPandaID(counter);
                                 counter++;
+                                children += iterCell.getPandaID() + " ";
                             }
-                            children += iterCell.getPandaID() + " ";
+                            
                         }
 
                     }
