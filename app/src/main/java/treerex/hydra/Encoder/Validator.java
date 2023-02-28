@@ -2,6 +2,7 @@ package treerex.hydra.Encoder;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -19,6 +20,7 @@ import fr.uga.pddl4j.problem.operator.Method;
 import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.DataStructures.Layer;
+import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.HelperFunctions.PrintFunctions;
 
 public class Validator {
@@ -35,16 +37,61 @@ public class Validator {
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
-                // process the line
-                line = line.substring(0, line.length() - 1);// remove ";"
-                if (line.contains("=") && line.contains("_") && !line.contains("b")) {
-                    String[] data = line.split(" = ");
-                    String[] key = data[0].split("_");
-                    String name = data[0];
-                    int value = Integer.parseInt(data[1]);
+
+                // If it is an empty line, continue
+                if (line.isEmpty()) {
+                    continue;
+                }
+
+                if (Hydra.solver == SolverType.CSP) {
+                    // process the line for the CSP solver
+                    line = line.substring(0, line.length() - 1);// remove ";"
+                    if (line.contains("=") && line.contains("_") && !line.contains("b")) {
+                        String[] data = line.split(" = ");
+                        String[] key = data[0].split("_");
+                        String name = data[0];
+                        int value = Integer.parseInt(data[1]);
+                        int layer = Integer.parseInt(key[1]);
+                        int cell = Integer.parseInt(key[2]);
+                        // "c" for cell, p for predicate
+                        if (name.contains("c")) {
+                            ProblemEncoder.allVariables.get(layer)[cell].setSolutionValue(value);
+
+                        } else if (name.contains("p_")) {
+                            int clique = Integer.parseInt(key[3]);
+                            ProblemEncoder.allCliques.get(layer)[cell][clique].setSolutionValue(value);
+
+                        }
+                    }
+                }
+                else if (Hydra.solver == SolverType.SMT) {
+                    // process the line for the SMT solver
+                    if (!line.contains("define-fun")) {
+                        continue;
+                    }
+                    // Get the name of the variable
+                    String[] data = line.split(" ");
+                    String name = data[3];
+                    // The value is in the next line
+                    String lineValue = br.readLine();
+                    String[] dataLineValue = lineValue.split(" ");
+                    // Get the value
+                    boolean isNegative = dataLineValue.length == 6;
+                    int valueIdx = isNegative ? 5 : 4;
+                    int numParenthesisToRemove = 1;
+                    if (isNegative) {
+                        numParenthesisToRemove++;
+                    }
+                    String valueStr = dataLineValue[valueIdx].substring(0, dataLineValue[valueIdx].length() - numParenthesisToRemove);
+
+                    int value = Integer.parseInt(valueStr);
+                    if (isNegative) {
+                        value = -value;
+                    }
+                    String[] key = name.split("_");
                     int layer = Integer.parseInt(key[1]);
                     int cell = Integer.parseInt(key[2]);
-                    // "c" for cell, p for predicate
+
                     if (name.contains("c")) {
                         ProblemEncoder.allVariables.get(layer)[cell].setSolutionValue(value);
 
@@ -139,8 +186,9 @@ public class Validator {
                                 allVariables.get(layerId + 1)[network.get(layerId).getNext(cellId) + iter]
                                         .setPandaID(counter);
                                 counter++;
+                                children += iterCell.getPandaID() + " ";
                             }
-                            children += iterCell.getPandaID() + " ";
+                            
                         }
 
                     }
@@ -154,6 +202,87 @@ public class Validator {
         }
         out += "<==";
         return out;
+    }
+
+
+/**
+     * Validates a given plan by writing the plan's hierarchy to a file and
+     * executing a command to verify the plan.
+     * If the plan is valid, the function returns true. If the plan is invalid or if
+     * there is an error in executing
+     * the command, the function returns false.
+     *
+     * @param plan    the plan to validate
+     * @param domainePath    the path to the domain file
+     * @param problemPath    the path to the problem file
+     * @return true if the plan is valid, false otherwise
+     * @throws IOException if there is an error in writing to the file or executing
+     *                     the command
+     */
+    public static boolean validatePlan(String plan, String domainePath, String problemPath) throws IOException {
+        // Create a temporary file to store the hierarchy of the plan
+        File planFile = File.createTempFile("tmp_plan", ".txt");
+
+        String path_exec_VAL = "validator/pandaPIparser";
+
+        // Write the hierarchy of the plan to the fileZ
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(planFile))) {
+            writer.write(plan);
+        }
+
+        // Construct the command to verify the plan
+        String command = String.format("./%s --verify %s %s %s", path_exec_VAL, domainePath,
+        problemPath, planFile.getAbsolutePath());
+
+        System.out.println(command);
+
+        // Execute the command and store the output
+        StringBuilder output = new StringBuilder();
+        Process p = Runtime.getRuntime().exec(command);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+        }
+        String outputStr = output.toString();
+
+        // Split the output into separate lines
+        String[] lines = outputStr.split("\n");
+
+        // Get the last line of the output
+        String lastLine = lines[lines.length - 1];
+
+        // Check if the last line contains the string "Plan verification result"
+        if (!lastLine.contains("Plan verification result")) {
+            // If the last line does not contain the string "Plan verification result", log
+            // an error and return false
+            System.out.println("Cannot verify the plan given. Output returned by executable: \n" + outputStr);
+            return false;
+        }
+        // If the last line contains the string "Plan verification result", return true
+        // if the last line also contains the string "true"
+        return lastLine.contains("true");
+    }
+
+
+    /**
+     * Executes a command and returns the output as a string.
+     *
+     * @param command the command to execute
+     * @return the output of the command as a string
+     * @throws IOException if there is an error in executing the command
+     */
+    private String executeCommand(String command) throws IOException {
+        StringBuilder output = new StringBuilder();
+        Process p = Runtime.getRuntime().exec(command);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+        }
+        return output.toString();
     }
 
 }

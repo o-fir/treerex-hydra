@@ -312,7 +312,7 @@ public class ProblemEncoder {
             // Call solver
             String cmd;
             if (Hydra.solver == SolverType.CSP) {
-                cmd = "minizinc --solver chuffedDebug -s -t " + timeoutInMs + " " + mainOutputFile;
+                cmd = "minizinc --solver chuffed -s -t " + timeoutInMs + " " + mainOutputFile;
             } else if (Hydra.solver == SolverType.SMT) {
                 // -smt2 to use parser for smt2 -st to get statistics and -T to set timeout
                 cmd = "z3 -smt2 -st -T:" + Math.round((timeoutInMs / 1000)) + " " + mainOutputFile;
@@ -380,6 +380,16 @@ public class ProblemEncoder {
         String output = Validator.printPandaOutput(allVariables, layers, problem);
         System.out.println("SOLUTION:");
         System.out.println(output);
+
+        // Write the plan to file and verify it
+        boolean planIsValid = Validator.validatePlan(output, DPath, PPath);
+
+        if (planIsValid) {
+            System.out.println("=== PLAN IS VALID ===");
+        } else {
+            System.out.println("=== PLAN IS INVALID ===");
+        }
+
 
         int walltimeInMs = (int) ((System.nanoTime() - walltimeStart)
                 / 1000000);
