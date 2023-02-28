@@ -6,3 +6,11 @@ build
 
 # Ignore all binary files
 *class
+
+# Ignore all minizinc files
+*mzn
+
+*.txt
+
+# Ignore all .smt files
+*.SMT
