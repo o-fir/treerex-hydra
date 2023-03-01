@@ -9,6 +9,7 @@ import treerex.hydra.DataStructures.LayerCell;
 import treerex.hydra.DataStructures.Constraints.ArithmeticConstraint;
 import treerex.hydra.DataStructures.Constraints.CommentConstraint;
 import treerex.hydra.DataStructures.Constraints.Rule11Constraint;
+import treerex.hydra.DataStructures.Constraints.Rule12Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule13Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule14Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule14ExtraConstraint;
@@ -377,22 +378,29 @@ public class RuleConstraintEncoder {
 
     // RULE 11
     // actions persist between layers
-    public static List<HydraConstraint> encodeRule11ForOneLayer(List<IntVar[]> allVariables,
+    public static List<HydraConstraint> encodeRule11and12ForOneLayer(List<IntVar[]> allVariables,
             int layerIndex, List<Layer> network, Problem problem) {
 
         IntVar[] layerVariables = allVariables.get(layerIndex);
         IntVar[] nextLayerVariables = allVariables.get(layerIndex + 1);
         Layer layer = network.get(layerIndex);
         List<HydraConstraint> constraints = new ArrayList<>();
-        constraints.add(new CommentConstraint("Rule 11"));
+        constraints.add(new CommentConstraint("Rule 11 and 12"));
         for (int i = 0; i < layer.getCells().size(); i++) {
 
             int next = layer.getNext(i);
             constraints.add(new Rule11Constraint(layerVariables[i], nextLayerVariables[next]));
 
+            // Rule 12, Fill the rest with noops
+            List<IntVar> tmp = new ArrayList<>();
+            for (int childIdx = 1; childIdx < layer.getCells().get(i).getMaxE(); childIdx++) {
+                // if .... => c(i+1, j+next) = noop
+            
+                tmp.add(nextLayerVariables[next + childIdx]);
+            }
+            constraints.add(new Rule12Constraint(layerVariables[i], tmp));
         }
         return constraints;
-
     }
 
     // RULES 13-15

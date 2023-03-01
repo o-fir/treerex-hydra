@@ -125,7 +125,7 @@ public class ProblemEncoder {
                 constraintsPerLayer.get(i)
                         .addAll(RuleConstraintEncoder.encodeRule10ForOneLayer(allCliques, i, layers, problem));
                 // RULE 11 - actions should persist between layers
-                constraintsPerLayer.get(i).addAll(RuleConstraintEncoder.encodeRule11ForOneLayer(allVariables,
+                constraintsPerLayer.get(i).addAll(RuleConstraintEncoder.encodeRule11and12ForOneLayer(allVariables,
                         i, layers,
                         problem));
                 // RULE 12 - if an action occurs, fill empty space with noops
