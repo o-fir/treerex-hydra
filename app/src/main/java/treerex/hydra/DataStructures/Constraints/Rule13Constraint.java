@@ -27,15 +27,15 @@ public class Rule13Constraint extends HydraConstraint {
 
     public String toString() {
         if (Hydra.solver == SolverType.CSP) {
-            String tmp = "constraint " + ifPartVar.getName() + "=" + ((ifPartVal + 1) * -1) + " -> "
+            String tmp = "constraint (" + ifPartVar.getName() + "=" + ((ifPartVal + 1) * -1) + ") <-> ("
                     + thenPartVar.getName()
                     + "="
-                    + (thenPartVal + 1) + ";\n";
-
+                    + (thenPartVal + 1) + ");\n";
+            
             return tmp;
 
         } else if (Hydra.solver == SolverType.SMT) {
-            return "(assert (=> (= " + ifPartVar.getName() + " " + ((ifPartVal + 1) * -1) + ") (= "
+            return "(assert (<=> (= " + ifPartVar.getName() + " " + ((ifPartVal + 1) * -1) + ") (= "
                     + thenPartVar.getName() + " " + (thenPartVal + 1) + ")))\n";
         } else if (Hydra.solver == SolverType.SAT) {
             // TODO: Implement for SAT
