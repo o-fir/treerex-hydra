@@ -1,11 +1,15 @@
 package treerex.hydra.DataStructures.Constraints;
 
+import java.rmi.ConnectIOException;
 import java.util.List;
 
 import treerex.hydra.DataStructures.HydraConstraint;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.SolverType;
+import treerex.hydra.DataStructures.VariableType;
+import treerex.hydra.Encoder.SATUniqueIDCreator;
+import treerex.hydra.HelperFunctions.PrintFunctions;
 
 /**
  * Rule 8: Frame axioms: If a fact change between two consecutive cells then
@@ -100,7 +104,32 @@ public class Rule8Constraint extends HydraConstraint {
 
             return t2f + f2t + "\n";
         } else if (Hydra.solver == SolverType.SAT) {
-            // TODO: Implement for SAT
+
+            int layerIdx = currentCellVar.getLayerIdx();
+            int cellIdx = currentCellVar.getCellIdx();
+
+            // First, get the fact that is being changed
+            System.out.println(PrintFunctions.predicateToString(predicateId, Hydra.problem2));
+            int uniqueIdPred = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PREDICATE, predicateId);
+
+            // Then get all the methods which can occurs at this cell (in the true rule, it uses the "primitive" variable, but we do not have it here...)
+            for (Integer methodCurrentCell : currentCellVar.getDomain()) {
+
+                // Pass if this is not a method
+                if (methodCurrentCell >= 0) {
+                    continue;
+                }
+
+                // Get the pddl4j ID of the method
+                int methodId = -(methodCurrentCell * -1) - 1;
+
+                // Get the unique ID of the method
+                int uniqueIdMethod = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.METHOD, methodId);
+            }
+
+            // Finally, get all actions which can occurs at this cell and which can change the fact
+
+            // TODO: Finish to implement for SAT
             return "";
         }
         return "N/A";

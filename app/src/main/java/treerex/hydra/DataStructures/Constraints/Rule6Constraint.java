@@ -6,6 +6,9 @@ import treerex.hydra.DataStructures.HydraConstraint;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.SolverType;
+import treerex.hydra.DataStructures.VariableType;
+import treerex.hydra.Encoder.SATUniqueIDCreator;
+import treerex.hydra.HelperFunctions.PrintFunctions;
 
 /**
  * Rule 6: If a method is executed, then all its positive and negative
@@ -73,8 +76,33 @@ public class Rule6Constraint extends HydraConstraint {
 
 
         } else if (Hydra.solver == SolverType.SAT) {
-            // TODO: Implement SAT version
-            return "";
+            StringBuilder out = new StringBuilder();
+
+            int layerIdx = ifVar.getLayerIdx();
+            int cellIdx = ifVar.getCellIdx();
+            
+            // An implication is a disjunction of the negation of the antecedent and the consequent
+
+            // int idMethod = (ifVal + 1);
+
+            System.out.println(PrintFunctions.methodToString(ifVal, Hydra.problem2));
+
+            // First, get the unique ID for the action
+            int satUniqueIDMethod = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.METHOD, ifVal);
+
+            for (int i = 0; i < posPrecVars.size(); i++) {
+                int satUniqueIDPrec = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PREDICATE, posPrecVals.get(i));
+                System.out.println("Pos precond: " + PrintFunctions.predicateToString(posPrecVals.get(i), Hydra.problem2));
+                out.append("-" + satUniqueIDMethod + " " + satUniqueIDPrec + " 0");
+                
+            }
+            for (int i = 0; i < negPrecVars.size(); i++) {
+                int satUniqueIDPrec = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PREDICATE, negPrecVals.get(i));
+                System.out.println("Neg precond " + PrintFunctions.predicateToString(negPrecVals.get(i), Hydra.problem2));
+                out.append("-" + satUniqueIDMethod + " " + satUniqueIDPrec + " 0");
+            }
+
+            return out.toString();
         } else {
             return "N/A";
         }

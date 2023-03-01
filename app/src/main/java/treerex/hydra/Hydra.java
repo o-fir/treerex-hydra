@@ -15,6 +15,7 @@ import fr.uga.pddl4j.problem.DefaultProblem;
 import treerex.hydra.DataStructures.Layer;
 import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.Encoder.ProblemEncoder;
+import treerex.hydra.Encoder.SATUniqueIDCreator;
 import treerex.hydra.Preprocessing.NetworkGenerator;
 
 public class Hydra {
@@ -28,6 +29,7 @@ public class Hydra {
      */
     public static String projectDir = "";
     public static SolverType solver;
+    public static DefaultProblem problem2;
 
     public static void main(String[] args) {
 
@@ -82,9 +84,18 @@ public class Hydra {
             // Instantiate the planning problem
             problem.instantiate();
 
+            problem2 = problem;
+
             // Prints that the domain and the problem were successfully parsed
             System.out.print("\nparsing domain file \"" + args[1] + "\" done successfully");
             System.out.print("\nparsing problem file \"" + args[2] + "\" done successfully\n\n");
+
+
+            // Initialize the class which will allow us to create an unique IDs for each variable
+            // (only for SAT)
+            if (solver == SolverType.SAT) {
+                SATUniqueIDCreator.initialize(problem);
+            }
 
             // 2. CREATE THE NETWORK
             List<Layer> network = NetworkGenerator.generateInitialNetwork(problem);

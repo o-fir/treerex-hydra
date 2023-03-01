@@ -71,6 +71,15 @@ public class ProblemEncoder {
             allCliques.add(layerCliques);
         }
 
+        // Indicate the size of each layer to the SAT unique ID creator
+        // (As it is used to generate unique IDs for each variable depending on
+        // the layer and cell index)
+        if (Hydra.solver == SolverType.SAT) {
+            for (Layer layer : layers) {
+                SATUniqueIDCreator.addLayerSize(layer.getCells().size());
+            }
+        }
+
         int maxLayer = 20;
         int currentLayer = 0;
 
@@ -299,8 +308,20 @@ public class ProblemEncoder {
                 writer.write("(exit)\n");
                 writer.flush();
                 writer.close();
-            } else {
+            } else if (Hydra.solver == SolverType.SAT) {
                 mainOutputFile = "blabla.dimacs";
+
+
+                // Write all the constraints
+                for (int i = 0; i < constraintsPerLayer.size(); i++) {
+                    for (HydraConstraint c : constraintsPerLayer.get(i)) {
+                        System.out.println(c.toString());
+                    }
+                }
+            }
+            else {
+                mainOutputFile = "blabla.dimacs";
+                System.out.println("ERROR: Solver not supported");
             }
 
             ///////////////////
@@ -346,6 +367,13 @@ public class ProblemEncoder {
                     break;
                 }
                 layers.add(newLayer);
+
+
+                if (Hydra.solver == SolverType.SAT) {
+                    SATUniqueIDCreator.addLayerSize(newLayer.getCells().size());
+                }
+
+
                 constraintsPerLayer.add(new ArrayList<HydraConstraint>());
                 /////////////////////////
                 // 2. INTRODUCE CPLEX VARIABLES FOR THE NEW LAYER
@@ -426,7 +454,7 @@ public class ProblemEncoder {
 
             String name = "c_" + layerIndex + "_" + i;
 
-            IntVar var = new IntVar(domain, name);
+            IntVar var = new IntVar(domain, name, false, -1, layerIndex, i);
             vars.add(var);
         }
 
@@ -466,7 +494,7 @@ public class ProblemEncoder {
             // the lower bound is -1 and corresponds to none-of-those
             String name = "p_" + layerIndex + "_" + cellIndex + "_" + i;
 
-            IntVar var = new IntVar(clique, name);
+            IntVar var = new IntVar(clique, name, true, i, layerIndex, cellIndex);
             vars.add(var);
         }
 

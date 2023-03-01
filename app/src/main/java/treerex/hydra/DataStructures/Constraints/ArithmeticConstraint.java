@@ -4,6 +4,9 @@ import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.HydraConstraint;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.DataStructures.SolverType;
+import treerex.hydra.DataStructures.VariableType;
+import treerex.hydra.Encoder.SATUniqueIDCreator;
+import treerex.hydra.HelperFunctions.PrintFunctions;
 
 public class ArithmeticConstraint extends HydraConstraint {
     private IntVar leftHandVar;
@@ -43,14 +46,97 @@ public class ArithmeticConstraint extends HydraConstraint {
             } else {
                 return "(assert (" + operator + " " + leftHandVar.getName() + " " + rightHandVar.getName() + "))\n";
             }
-        } else { // if (Hydra.solver == SolverType.SAT) {
-            // TODO implement SAT solver
-            return "";
-            // if (rightHandVar == null) {
-            //     return XXXXXXXXXXXXX
-            // }else{
-            //     return XXXXXXXXXXXXX
-            // }
+        } else if (Hydra.solver == SolverType.SAT) {
+
+            StringBuilder out = new StringBuilder();
+
+            if (operator == "=") {
+
+                
+                // We need to find the predicate associated with IntVar + domain value. 
+                // If this predicate is true, then we indicate that the constrains is satisfied.
+                // If this predicate is false, then we indicate that the constraint is not satisfied.
+                if (rightHandVar == null) {
+                    if (leftHandVar.isClique()) {
+                        for (int i = 0; i < leftHandVar.getDomain().size(); i++) {
+                            int fluentIdx = leftHandVar.getDomain().get(i);
+
+                            // No need for the "None of these" value
+                            if (fluentIdx == -1) {
+                                continue; 
+                            }
+
+                            int satIdVar = SATUniqueIDCreator.getUniqueID(leftHandVar.getLayerIdx(), leftHandVar.getCellIdx(), VariableType.PREDICATE, fluentIdx);
+
+                            if (fluentIdx == constantVal) {
+                                // This fluent must be true
+                                System.out.println("Should be true: ");
+                                System.out.println(PrintFunctions.predicateToString(fluentIdx, Hydra.problem2) + "_" + leftHandVar.getLayerIdx() + "_" + leftHandVar.getCellIdx());
+
+                                out.append(satIdVar + "0\n");
+                            } else {
+                                // This fluent must be false
+                                System.out.println("Should be false: ");
+                                System.out.println(PrintFunctions.predicateToString(fluentIdx, Hydra.problem2) + "_" + leftHandVar.getLayerIdx() + "_" + leftHandVar.getCellIdx());
+
+                                out.append("-" + satIdVar + "0\n");
+                            }
+                        }                        
+                    } 
+                    System.out.println("(assert (" + operator + " " + leftHandVar.getName() + " " + constantVal + "))\n");    
+                }
+                else {
+                    // Check the variable type of the left and right hand size
+                    VariableType varTypeLeftHandSize;
+                    VariableType varTypeRightHandSize;
+
+                    if (leftHandVar.isClique()) {
+                        varTypeLeftHandSize = VariableType.PREDICATE;
+                    } else {
+                        System.out.println("NOT IMPLEMENTED !!");
+                        System.exit(1);
+                    }
+
+                    if (rightHandVar.isClique()) {
+                        varTypeRightHandSize = VariableType.PREDICATE;
+                    } else {
+                        System.out.println("NOT IMPLEMENTED !!");
+                        System.exit(1);
+                    }
+
+                    // Ok, we do have a clique variable on both sides of the equation. We must do an equality on all the domain values of these cliques
+                    // (They should have the same domain)
+
+                    for (int i = 0; i < leftHandVar.getDomain().size(); i++) {
+                        int fluentIdx = leftHandVar.getDomain().get(i);
+
+                        // No need for the "None of these" value
+                        if (fluentIdx == -1) {
+                            continue; 
+                        }
+
+                        // Get the unique ID for the left hand side variable
+                        int satIdVarLeftHandSize = SATUniqueIDCreator.getUniqueID(leftHandVar.getLayerIdx(), leftHandVar.getCellIdx(), VariableType.PREDICATE, fluentIdx);
+
+                        // Get the unique ID for the right hand side variable
+                        int satIdVarRightHandSize = SATUniqueIDCreator.getUniqueID(rightHandVar.getLayerIdx(), rightHandVar.getCellIdx(), VariableType.PREDICATE, fluentIdx);
+
+                        // Add the equivalence constraint (which is the same as a=>b and b=>a)
+                        out.append("-" + satIdVarLeftHandSize + " " + satIdVarRightHandSize + " 0\n");
+                        out.append("-" + satIdVarRightHandSize + " " + satIdVarLeftHandSize + " 0\n");
+
+                    }
+                }
+            }
+            else {
+                System.out.println("NOT IMPLEMENTED !!");
+                System.exit(1);
+            }
+            return out.toString();
+        
+        }
+        else {
+            return "N/A";
         }
     }
 
