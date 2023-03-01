@@ -29,8 +29,8 @@
             "request": "launch",
             "args": [
                 "csp",
-                "benchmarks/panda-extra/total-order/Gripper_new/domain.hddl",
-                "benchmarks/panda-extra/total-order/Gripper_new/p01.hddl"
+                "benchmarks/ipc2020/total-order/Transport/domain.hddl",
+                "benchmarks/ipc2020/total-order/Transport/pfile01.hddl"
             ],
 
             "mainClass": "treerex.hydra.Hydra",

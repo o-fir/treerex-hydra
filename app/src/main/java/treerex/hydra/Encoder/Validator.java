@@ -38,7 +38,6 @@ public class Validator {
             String line;
             while ((line = br.readLine()) != null) {
 
-
                 if (line.isEmpty()) {
                     continue;
                 }
@@ -84,7 +83,8 @@ public class Validator {
                     if (isNegative) {
                         numParenthesisToRemove++;
                     }
-                    String valueStr = dataLineValue[valueIdx].substring(0, dataLineValue[valueIdx].length() - numParenthesisToRemove);
+                    String valueStr = dataLineValue[valueIdx].substring(0,
+                            dataLineValue[valueIdx].length() - numParenthesisToRemove);
 
                     int value = Integer.parseInt(valueStr);
                     if (isNegative) {
@@ -133,10 +133,13 @@ public class Validator {
                 // if the cell is a primitive action assign its pandaID based on the pandaID of
                 // its child
                 IntVar tgt = allVariables.get(layerPointer)[cellIterator];
-                IntVar child = allVariables.get(layerPointer + 1)[network.get(layerPointer).getNext(cellIterator)];
-                if (tgt.getValue() > 0 && tgt.getPandaID() == null) {
-                    tgt.setPandaID(child.getPandaID());
-
+                // iterate over children 0 to maxE
+                for (int q = 0; q < network.get(layerPointer).getCells().get(cellIterator).getMaxE(); q++) {
+                    IntVar child = allVariables.get(layerPointer + 1)[network.get(layerPointer)
+                            .getNext(cellIterator + q)];
+                    if (tgt.getValue() > 0 && tgt.getPandaID() == null) {
+                        tgt.setPandaID(child.getPandaID());
+                    }
                 }
             }
         }
