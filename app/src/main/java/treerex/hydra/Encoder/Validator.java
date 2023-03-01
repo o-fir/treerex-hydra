@@ -136,7 +136,7 @@ public class Validator {
                 // iterate over children 0 to maxE
                 for (int q = 0; q < network.get(layerPointer).getCells().get(cellIterator).getMaxE(); q++) {
                     IntVar child = allVariables.get(layerPointer + 1)[network.get(layerPointer)
-                            .getNext(cellIterator + q)];
+                            .getNext(cellIterator) + q];
                     if (tgt.getValue() > 0 && tgt.getPandaID() == null) {
                         tgt.setPandaID(child.getPandaID());
                     }
