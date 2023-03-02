@@ -6,6 +6,9 @@ import treerex.hydra.DataStructures.HydraConstraint;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.SolverType;
+import treerex.hydra.DataStructures.VariableType;
+import treerex.hydra.Encoder.SATUniqueIDCreator;
+import treerex.hydra.HelperFunctions.PrintFunctions;
 
 /**
  * If a reduction occurs in a cell, then if its subtask i is not primitive, one
@@ -50,8 +53,31 @@ public class Rule14Constraint extends HydraConstraint {
                     + possibleReductions.toString() + "))\n";
 
         } else if (Hydra.solver == SolverType.SAT) {
-            // TODO: Implement for SAT
-            return "";
+
+            StringBuilder out = new StringBuilder();
+
+            int layerIdx = ifPartVar.getLayerIdx();
+            int cellIdx = ifPartVar.getCellIdx();
+
+            int nextLayerIdx = thenPartVar.getLayerIdx();
+            int nextCellIdx = thenPartVar.getCellIdx();
+
+            // Get the unique ID of the reduction
+            int reductionUniqueId = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.METHOD, ifPartVal);
+            // System.out.println("Parent method: " + PrintFunctions.methodToString(ifPartVal, Hydra.problem2));
+
+            out.append("-" + reductionUniqueId + " ");
+
+            for (Integer i : possibleMethods) {
+                // Get the unique ID of the method
+                // System.out.println("child method: " + PrintFunctions.methodToString(i, Hydra.problem2));
+                int methodUniqueId = SATUniqueIDCreator.getUniqueID(nextLayerIdx, nextCellIdx, VariableType.METHOD, i);
+
+                out.append(methodUniqueId + " ");
+            }
+            out.append("0\n");
+
+            return out.toString();
         } else {
             return "N/A";
         }

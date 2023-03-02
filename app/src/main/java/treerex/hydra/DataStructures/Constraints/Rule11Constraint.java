@@ -4,6 +4,8 @@ import treerex.hydra.DataStructures.HydraConstraint;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.SolverType;
+import treerex.hydra.DataStructures.VariableType;
+import treerex.hydra.Encoder.SATUniqueIDCreator;
 
 /**
  * Rule 11: If an action occurs in a cell, then it will also occur
@@ -31,8 +33,43 @@ public class Rule11Constraint extends HydraConstraint {
             return "(assert (=> (>= " + ifPart.getName() + " 0) (= " + ifPart.getName() + " " + thenPart.getName()
                     + ")))\n";
         } else if (Hydra.solver == SolverType.SAT) {
-            // TODO Implement for SAT
-            return "";
+
+            StringBuilder out = new StringBuilder();
+
+            // For all actions in the domain of the ifPart variable, we indicate that if this action is true
+            // then the corresponding action in the thenPart variable must also be true.
+
+            int currentLayerIdx = ifPart.getLayerIdx();
+            int currentCellIdx = ifPart.getCellIdx();
+
+            int nextLayerIdx = thenPart.getLayerIdx();
+            int nextCellIdx = thenPart.getCellIdx();
+
+            for (Integer actionId : ifPart.getDomain()) {
+
+                // If this is a method, continue
+                if (actionId < 0) {
+                    continue;
+                }
+
+                int currentActionUniqueId;
+                int nextActionUniqueId;
+
+                if (actionId == 0) {
+                    // This is a noop action
+                    currentActionUniqueId = SATUniqueIDCreator.getUniqueID(currentLayerIdx, currentCellIdx, VariableType.NOOP, -1);
+                    nextActionUniqueId = SATUniqueIDCreator.getUniqueID(nextLayerIdx, nextCellIdx, VariableType.NOOP, -1);
+                } else {
+                    // This is an action
+                    int trueActionId = actionId - 1;
+                    currentActionUniqueId = SATUniqueIDCreator.getUniqueID(currentLayerIdx, currentCellIdx, VariableType.ACTION, trueActionId);
+                    nextActionUniqueId = SATUniqueIDCreator.getUniqueID(nextLayerIdx, nextCellIdx, VariableType.ACTION, trueActionId);
+                }
+
+                out.append("-" + currentActionUniqueId + " " + nextActionUniqueId + " 0\n");
+            }
+
+            return out.toString();
         } else {
             return "N/A";
         }

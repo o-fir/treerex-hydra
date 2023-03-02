@@ -6,6 +6,8 @@ import treerex.hydra.DataStructures.HydraConstraint;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.SolverType;
+import treerex.hydra.DataStructures.VariableType;
+import treerex.hydra.Encoder.SATUniqueIDCreator;
 
 /**
  * Any child cells no defined by a method of the parent cell must be filled with Noop actions.
@@ -42,8 +44,25 @@ public class Rule15Constraint extends HydraConstraint {
             return "(assert (=> (= " + ifPartVar.getName() + " " + ((ifPartVal + 1) * -1) + ") " + noopsAtChildrenCells
                     + "))\n";
         } else if (Hydra.solver == SolverType.SAT) {
-            // TODO: Implement for SAT
-            return "";
+            StringBuilder out = new StringBuilder();
+
+            int currentLayerIdx = ifPartVar.getLayerIdx();
+            int currentCellIdx = ifPartVar.getCellIdx();
+
+            StringBuilder noopsNextLayers = new StringBuilder();
+            for (IntVar vI : noops) {
+                int nextLayerIdx = currentLayerIdx + 1;
+                int nextCellIdx = vI.getCellIdx();
+                int nextNoopUniqueId = SATUniqueIDCreator.getUniqueID(nextLayerIdx, nextCellIdx, VariableType.NOOP, -1);
+                noopsNextLayers.append(nextNoopUniqueId + " ");
+            }
+
+            // Get the method unique id
+            int methodUniqueId = SATUniqueIDCreator.getUniqueID(currentLayerIdx, currentCellIdx, VariableType.METHOD, ifPartVal);
+
+            out.append("-" + methodUniqueId + " " + noopsNextLayers + " 0\n");
+
+            return out.toString();
         } else {
             return "N/A";
         }

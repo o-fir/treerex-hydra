@@ -6,6 +6,7 @@ import treerex.hydra.DataStructures.HydraConstraint;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.DataStructures.Layer;
 import treerex.hydra.DataStructures.LayerCell;
+import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.DataStructures.Constraints.ArithmeticConstraint;
 import treerex.hydra.DataStructures.Constraints.CommentConstraint;
 import treerex.hydra.DataStructures.Constraints.Rule11Constraint;
@@ -14,9 +15,12 @@ import treerex.hydra.DataStructures.Constraints.Rule13Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule14Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule14ExtraConstraint;
 import treerex.hydra.DataStructures.Constraints.Rule15Constraint;
+import treerex.hydra.DataStructures.Constraints.Rule16Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule5Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule6Constraint;
+import treerex.hydra.DataStructures.Constraints.Rule7Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule8Constraint;
+import treerex.hydra.DataStructures.Constraints.Rule9Constraint;
 import treerex.hydra.HelperFunctions.UtilFunctions;
 import treerex.hydra.Preprocessing.LiftedSasPlus.Strips2SasPlus;
 import fr.uga.pddl4j.problem.Problem;
@@ -312,6 +316,33 @@ public class RuleConstraintEncoder {
         return constraints;
     }
 
+    // RULE 7 Each action is primitive, and each reduction is non primitive (used only for SAT solver)
+    public static List<HydraConstraint> encodeRule7ForOneLayer(List<IntVar[]> allVariables,
+    List<IntVar[][]> allCliques,
+    int layerIndex, List<Layer> network, Problem problem) {
+
+
+        IntVar[] layerVariables = allVariables.get(layerIndex);
+        IntVar[][] layerCliques = allCliques.get(layerIndex);
+        Layer layer = network.get(layerIndex);
+        List<HydraConstraint> constraints = new ArrayList<>();
+
+        // for every cell i except last cell
+        for (int i = 0; i < layer.getCells().size() - 1; i++) {
+            LayerCell cell = layer.getCells().get(i);
+            constraints.add(new CommentConstraint("Rule 7"));
+
+            for (Integer idPrimitiveTask : cell.getPrimitiveTasks()) {
+                constraints.add(new Rule7Constraint(layerVariables[i], idPrimitiveTask, VariableType.ACTION));
+            }
+            for (Integer idMethod : cell.getMethods()) {
+                constraints.add(new Rule7Constraint(layerVariables[i], idMethod, VariableType.METHOD));
+            }
+        }
+
+        return constraints;
+    }
+
     // RULE 8
     // frame axioms
     // TODO DOES NOT SUPPORT CONDITIONAL EFFECTS!!!!!!
@@ -351,7 +382,38 @@ public class RuleConstraintEncoder {
 
         }
         return constraints;
+    }
 
+
+    // RULE 7 All possibly occuring actions are mutually exclusive
+    public static List<HydraConstraint> encodeRule9ForOneLayer(List<IntVar[]> allVariables,
+    List<IntVar[][]> allCliques,
+    int layerIndex, List<Layer> network, Problem problem) {
+
+
+        IntVar[] layerVariables = allVariables.get(layerIndex);
+        IntVar[][] layerCliques = allCliques.get(layerIndex);
+        Layer layer = network.get(layerIndex);
+        List<HydraConstraint> constraints = new ArrayList<>();
+
+        // for every cell i except last cell
+        for (int i = 0; i < layer.getCells().size() - 1; i++) {
+            LayerCell cell = layer.getCells().get(i);
+            constraints.add(new CommentConstraint("Rule 7"));
+
+            Integer[] actionArray = cell.getPrimitiveTasks().toArray(new Integer[cell.getPrimitiveTasks().size()]);
+
+            for (int action1 = 0; action1 < actionArray.length; action1++) {
+                for (int action2 = action1 + 1; action2 < actionArray.length; action2++) {
+                    constraints.add(new Rule9Constraint(layerVariables[i], actionArray[action1], actionArray[action2]));
+                }
+                if (cell.getNoop()) {
+                    constraints.add(new Rule9Constraint(layerVariables[i], actionArray[action1], -1));
+                }
+            }
+        }
+
+        return constraints;
     }
 
     // RULE 10
@@ -478,7 +540,8 @@ public class RuleConstraintEncoder {
         List<HydraConstraint> constraints = new ArrayList<>();
         for (int i = 0; i < layer.getCells().size(); i++) {
 
-            constraints.add(new ArithmeticConstraint(layerVariables[i], ">=", 0));
+            // constraints.add(new ArithmeticConstraint(layerVariables[i], ">=", 0));
+            constraints.add(new Rule16Constraint(layerVariables[i]));
         }
         // constraints.add(new AndConstraint(ifBool_conjunction));
         return constraints;

@@ -51,6 +51,7 @@ public class ProblemEncoder {
         boolean timeout = false; // indicates if solver reached timeout (for statistics only)
         boolean unsolvable = false; // indicates if solver declared that no solution exists (for statistics only)
         double solveTimeCumul = 0; // sum of all solve times
+        double solverTotalTimeSolverCumul = 0; // sum of all solver total time (for each layer)
         double walltimeStart = System.nanoTime();
 
         String DPath = args[1];
@@ -117,14 +118,27 @@ public class ProblemEncoder {
                                 allCliques, i,
                                 layers, problem));
                 // RULE 7 - an action and reduction can't happen simultaneously in a cell
-                // is redundant
+                // is redundant (only need to encode it for the SAT solver)
+                if (Hydra.solver == SolverType.SAT) {
+                    constraintsPerLayer.get(i)
+                            .addAll(RuleConstraintEncoder.encodeRule7ForOneLayer(allVariables,
+                                    allCliques, i,
+                                    layers, problem));
+                }
                 // RULE 8 - frame axioms
                 constraintsPerLayer.get(i)
                         .addAll(RuleConstraintEncoder.encodeRule8ForOneLayer(allVariables,
                                 allCliques, i,
                                 layers, problem));
                 // RULE 9 - an action and noop can't happen simultaneously in a cell
-                // is redundant
+                // is redundant (only need to encode it for the SAT solver)
+                if (Hydra.solver == SolverType.SAT) {
+                    constraintsPerLayer.get(i)
+                            .addAll(RuleConstraintEncoder.encodeRule9ForOneLayer(allVariables,
+                                    allCliques, i,
+                                    layers, problem));
+                }
+
             }
             // RULES FOR ALL LAYERS EXCEPT THE LAST
             // these rules ensure proper propagation/consistency between layers
@@ -311,13 +325,22 @@ public class ProblemEncoder {
             } else if (Hydra.solver == SolverType.SAT) {
                 mainOutputFile = "blabla.dimacs";
 
+                BufferedWriter writer;
+                writer = new BufferedWriter(new FileWriter(mainOutputFile));
+
 
                 // Write all the constraints
                 for (int i = 0; i < constraintsPerLayer.size(); i++) {
                     for (HydraConstraint c : constraintsPerLayer.get(i)) {
-                        System.out.println(c.toString());
+                        writer.write(c.toString());
                     }
                 }
+                for (HydraConstraint c : finalLayerConstraints) {
+                    writer.write(c.toString());
+                }
+
+                writer.flush();
+                writer.close();
             }
             else {
                 mainOutputFile = "blabla.dimacs";
@@ -338,7 +361,7 @@ public class ProblemEncoder {
                 // -smt2 to use parser for smt2 -st to get statistics and -T to set timeout
                 cmd = "z3 -smt2 -st -T:" + Math.round((timeoutInMs / 1000)) + " " + mainOutputFile;
             } else {
-                cmd = "command sat solver";
+                cmd = "glucose-syrup -model " + mainOutputFile;
             }
             // TODO - add SAT solver
             // else if (Hydra.solver == SolverType.SAT) {
@@ -348,13 +371,22 @@ public class ProblemEncoder {
             // Note: Output from command in terminal is saved to solutionPath
             // res[0] = 0 if problem UNSAT, res[0] = 1 if SAT
             // res[1] = solveTime
+
+            // Get the total time of the solver
+            Long init = System.currentTimeMillis();
             float[] res = callCommandInTerminal(cmd, solutionPath);
+            Long end = System.currentTimeMillis();
+            Long totalTimeToExecute_ms = end - init;
+            float totalTimeToExecute_s = totalTimeToExecute_ms / 1000F;
             System.out.println(
                     "solve time: " + res[1]);
+            System.out.println("Total solver time: " + totalTimeToExecute_s + " s");
             isSAT = res[0] == 1;
             if (res[1] > 0) {
                 solveTimeCumul += res[1];
             }
+            solverTotalTimeSolverCumul += totalTimeToExecute_s;
+            
             // if UNSAT - expand the layer structure
             if (!isSAT) {
                 // 1. EXPAND A LAYER
@@ -421,8 +453,9 @@ public class ProblemEncoder {
 
         int walltimeInMs = (int) ((System.nanoTime() - walltimeStart)
                 / 1000000);
-        System.out.println(solveTimeCumul);
-        System.out.println(walltimeInMs);
+        System.out.println("Solver time to check SAT: " +  solveTimeCumul + " s");
+        System.out.println("Total solver time: " + solverTotalTimeSolverCumul + " s");
+        System.out.println("Total time execution: " +  walltimeInMs / 1000F + " s");
 
         return new OutputStatistics((int) (solveTimeCumul * 1000), walltimeInMs, timeout, unsolvable);
 
@@ -512,7 +545,8 @@ public class ProblemEncoder {
         float time = -1;
         Runtime rt = Runtime.getRuntime();
         System.out.println("Command: " + cmd + " > " + solutionPath);
-        Process proc = rt.exec(commands);
+
+        Process proc = rt.exec(commands);        
 
         // Read the output from the terminal
         BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
@@ -524,6 +558,7 @@ public class ProblemEncoder {
 
         String s = null;
         while ((s = stdInput.readLine()) != null) {
+
             if (Hydra.solver == SolverType.CSP) {
                 if (!s.contains("%")) {
                     pw.write(s + "\n");
@@ -541,7 +576,7 @@ public class ProblemEncoder {
                 if (!s.contains(":")) {
                     pw.write(s + "\n");
                 } else {
-                    if (s.contains("total-time")) {
+                    if (s.contains(":time")) {
                         String[] split = s.split(" ");
                         String totalTimeStr = split[split.length - 1];
                         // Remove the parenthesis at the end
@@ -556,8 +591,24 @@ public class ProblemEncoder {
                 }
 
             } else if (Hydra.solver == SolverType.SAT) {
-                // TODO: implement SAT solver
-                throw new java.lang.UnsupportedOperationException("SAT IS NOT IMPLEMENTED YET.");
+
+                if (s.contains("c real time")) {
+                    String[] split = s.split(" ");
+                    String totalTimeStr = split[split.length - 2];
+                    // Remove the parenthesis at the end
+                    time = Float.parseFloat(totalTimeStr);
+                } else if (s.contains("s UNSATISFIABLE")) {
+                    SAT = 0;
+                } else if (s.startsWith("v")) {
+                    // Write one variable per line
+                    s.replace("v", "");
+                    for (String var : s.split(" ")) {
+                        if (var.equals("0")) {
+                            break;
+                        }
+                        pw.write(var + "\n");
+                    }
+                }
             }
         }
 

@@ -105,32 +105,51 @@ public class Rule8Constraint extends HydraConstraint {
             return t2f + f2t + "\n";
         } else if (Hydra.solver == SolverType.SAT) {
 
+            StringBuilder t2f = new StringBuilder();
+            StringBuilder f2t = new StringBuilder();
+
+            // The formula for the frame axioms is:
+            // pred1 ^ not(pred1_next_cell) => not(primitive) v action1 v action2 v ... v actionN
+            // Which correspond in cnf to:
+            // not(pred1) v pred1_next_cell v not(primitive) v action1 v action2 v ... v actionN
+
             int layerIdx = currentCellVar.getLayerIdx();
             int cellIdx = currentCellVar.getCellIdx();
 
             // First, get the fact that is being changed
-            System.out.println(PrintFunctions.predicateToString(predicateId, Hydra.problem2));
+            // System.out.println(PrintFunctions.predicateToString(predicateId, Hydra.problem2));
             int uniqueIdPred = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PREDICATE, predicateId);
+            // Get the fact in the next cell
+            int uniqueIdPredNextCell = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx + 1, VariableType.PREDICATE, predicateId);
 
-            // Then get all the methods which can occurs at this cell (in the true rule, it uses the "primitive" variable, but we do not have it here...)
-            for (Integer methodCurrentCell : currentCellVar.getDomain()) {
+            // Get the primitive variable for this layer and cell
+            int uniqueIdPrimitive = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PRIMITIVE, 0);
 
-                // Pass if this is not a method
-                if (methodCurrentCell >= 0) {
-                    continue;
-                }
+            t2f.append(uniqueIdPred + " -" + uniqueIdPredNextCell + " -" + uniqueIdPrimitive + " ");
 
-                // Get the pddl4j ID of the method
-                int methodId = -(methodCurrentCell * -1) - 1;
-
-                // Get the unique ID of the method
-                int uniqueIdMethod = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.METHOD, methodId);
+            
+            // Get all actions which can occurs at this cell and which can remove this fact
+            for (int destructorId : destructorActions) {
+                // System.out.println("Destructor: " + PrintFunctions.actionToString(destructorId, Hydra.problem2));
+                int uniqueIdAction = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.ACTION, destructorId);
+                t2f.append(uniqueIdAction + " ");
             }
+            t2f.append("0");
 
-            // Finally, get all actions which can occurs at this cell and which can change the fact
+            // Now, we do the same thing with the opposite case
+            // not(pred1_next_cell) ^ pred1 => not(primitive) v action1 v action2 v ... v actionN
 
-            // TODO: Finish to implement for SAT
-            return "";
+            f2t.append("-" + uniqueIdPred + " " + uniqueIdPredNextCell + " -" + uniqueIdPrimitive + " ");
+
+            // Get all actions which can occurs at this cell and which can add this fact
+            for (int creatorId : creatorActions) {
+                // System.out.println("Creator: " + PrintFunctions.actionToString(creatorId, Hydra.problem2));
+                int uniqueIdAction = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.ACTION, creatorId);
+                f2t.append(uniqueIdAction + " ");
+            }
+            f2t.append("0");
+
+            return t2f.toString() + "\n" + f2t.toString() + "\n";
         }
         return "N/A";
 

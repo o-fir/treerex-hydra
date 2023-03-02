@@ -112,31 +112,31 @@ public class Rule5Constraint extends HydraConstraint {
             
             // An implication is a disjunction of the negation of the antecedent and the consequent
 
-            System.out.println(PrintFunctions.actionToString(ifVal, Hydra.problem2));
+            // System.out.println(PrintFunctions.actionToString(ifVal, Hydra.problem2));
 
             // First, get the unique ID for the action
             int satUniqueIDAction = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.ACTION, ifVal);
 
             for (int i = 0; i < posPrecVars.size(); i++) {
                 int satUniqueIDPrec = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PREDICATE, posPrecVals.get(i));
-                System.out.println("Pos precond: " + PrintFunctions.predicateToString(posPrecVals.get(i), Hydra.problem2));
-                out.append("-" + satUniqueIDAction + " " + satUniqueIDPrec + " 0");
+                // System.out.println("Pos precond: " + PrintFunctions.predicateToString(posPrecVals.get(i), Hydra.problem2));
+                out.append("-" + satUniqueIDAction + " " + satUniqueIDPrec + " 0\n");
                 
             }
             for (int i = 0; i < negPrecVars.size(); i++) {
                 int satUniqueIDPrec = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PREDICATE, negPrecVals.get(i));
-                System.out.println("Neg precond " + PrintFunctions.predicateToString(negPrecVals.get(i), Hydra.problem2));
-                out.append("-" + satUniqueIDAction + " " + satUniqueIDPrec + " 0");
+                // System.out.println("Neg precond " + PrintFunctions.predicateToString(negPrecVals.get(i), Hydra.problem2));
+                out.append("-" + satUniqueIDAction + " " + satUniqueIDPrec + " 0\n");
             }
             for (int i = 0; i < posEffVars.size(); i++) {
                 int satUniqueIDPrec = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx + 1, VariableType.PREDICATE, posEffVals.get(i));
-                System.out.println("Pos eff " + PrintFunctions.predicateToString(posEffVals.get(i), Hydra.problem2));
-                out.append("-" + satUniqueIDAction + " " + satUniqueIDPrec + " 0");
+                // System.out.println("Pos eff " + PrintFunctions.predicateToString(posEffVals.get(i), Hydra.problem2));
+                out.append("-" + satUniqueIDAction + " " + satUniqueIDPrec + " 0\n");
             }
             for (int i = 0; i < negEffVars.size(); i++) {
                 int satUniqueIDPrec = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx + 1, VariableType.PREDICATE, negEffVals.get(i));
-                System.out.println("Neg eff " + PrintFunctions.predicateToString(negEffVals.get(i), Hydra.problem2));
-                out.append("-" + satUniqueIDAction + " " + satUniqueIDPrec + " 0");
+                // System.out.println("Neg eff " + PrintFunctions.predicateToString(negEffVals.get(i), Hydra.problem2));
+                out.append("-" + satUniqueIDAction + " " + satUniqueIDPrec + " 0\n");
             }
 
             return out.toString();

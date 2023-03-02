@@ -42,9 +42,20 @@ public class ArithmeticConstraint extends HydraConstraint {
         } else if (Hydra.solver == SolverType.SMT) {
             // TODO implement SMT solver
             if (rightHandVar == null) {
-                return "(assert (" + operator + " " + leftHandVar.getName() + " " + constantVal + "))\n";
+                if (operator == "!=") {
+                    return "(assert (not (=" + " " + leftHandVar.getName() + " " + constantVal + ")))\n";
+                } else {
+                    return "(assert (" + operator + " " + leftHandVar.getName() + " " + constantVal + "))\n";
+                }
+                
             } else {
-                return "(assert (" + operator + " " + leftHandVar.getName() + " " + rightHandVar.getName() + "))\n";
+                if (operator == "!=") {
+                    return "(assert (not (=" + " " + leftHandVar.getName() + " " + rightHandVar.getName() + ")))\n";    
+                }
+                else {
+                    return "(assert (" + operator + " " + leftHandVar.getName() + " " + rightHandVar.getName() + "))\n";
+                }
+                
             }
         } else if (Hydra.solver == SolverType.SAT) {
 
@@ -70,20 +81,20 @@ public class ArithmeticConstraint extends HydraConstraint {
 
                             if (fluentIdx == constantVal) {
                                 // This fluent must be true
-                                System.out.println("Should be true: ");
-                                System.out.println(PrintFunctions.predicateToString(fluentIdx, Hydra.problem2) + "_" + leftHandVar.getLayerIdx() + "_" + leftHandVar.getCellIdx());
+                                // System.out.println("Should be true: ");
+                                // System.out.println(PrintFunctions.predicateToString(fluentIdx, Hydra.problem2) + "_" + leftHandVar.getLayerIdx() + "_" + leftHandVar.getCellIdx());
 
                                 out.append(satIdVar + "0\n");
                             } else {
                                 // This fluent must be false
-                                System.out.println("Should be false: ");
-                                System.out.println(PrintFunctions.predicateToString(fluentIdx, Hydra.problem2) + "_" + leftHandVar.getLayerIdx() + "_" + leftHandVar.getCellIdx());
+                                // System.out.println("Should be false: ");
+                                // System.out.println(PrintFunctions.predicateToString(fluentIdx, Hydra.problem2) + "_" + leftHandVar.getLayerIdx() + "_" + leftHandVar.getCellIdx());
 
                                 out.append("-" + satIdVar + "0\n");
                             }
                         }                        
                     } 
-                    System.out.println("(assert (" + operator + " " + leftHandVar.getName() + " " + constantVal + "))\n");    
+                    // System.out.println("(assert (" + operator + " " + leftHandVar.getName() + " " + constantVal + "))\n");    
                 }
                 else {
                     // Check the variable type of the left and right hand size
