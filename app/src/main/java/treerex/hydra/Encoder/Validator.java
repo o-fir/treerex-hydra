@@ -21,6 +21,7 @@ import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.DataStructures.Layer;
 import treerex.hydra.DataStructures.SolverType;
+import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.HelperFunctions.PrintFunctions;
 
 public class Validator {
@@ -103,6 +104,30 @@ public class Validator {
 
                     }
                 }
+
+                else if (Hydra.solver == SolverType.SAT) {
+                    if (line.contains("v")) {
+                        continue;
+                    }
+                    // We do not care about negative values
+                    if (line.charAt(0) == '-') {
+                        continue;
+                    }
+
+                    int varId = Integer.parseInt(line);
+
+                    // Get the pddlVariable object associated with this variable
+                    pddlVariable varObj = SATUniqueIDCreator.convertSATUniqueIdToObj(varId);
+
+                    switch (varObj.type) {
+                        case ACTION:
+                        case METHOD:
+                            ProblemEncoder.allVariables.get(varObj.layer)[varObj.cell].setSolutionValue(varObj.id);
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
         }
         return true;
@@ -133,14 +158,17 @@ public class Validator {
                 // if the cell is a primitive action assign its pandaID based on the pandaID of
                 // its child
                 IntVar tgt = allVariables.get(layerPointer)[cellIterator];
-                // iterate over children 0 to maxE
-                for (int q = 0; q < network.get(layerPointer).getCells().get(cellIterator).getMaxE(); q++) {
-                    IntVar child = allVariables.get(layerPointer + 1)[network.get(layerPointer)
-                            .getNext(cellIterator) + q];
-                    if (tgt.getValue() > 0 && tgt.getPandaID() == null) {
-                        tgt.setPandaID(child.getPandaID());
-                    }
+
+                // If it a noop action or a method, pass this cell
+                if (!(tgt.getValue() > 0 && tgt.getPandaID() == null)) {
+                    continue;
                 }
+
+                // The action id should be equal to its first child (propagation of the action)
+                IntVar firstChild = allVariables.get(layerPointer + 1)[network.get(layerPointer)
+                .getNext(cellIterator)];
+
+                tgt.setPandaID(firstChild.getPandaID());
             }
         }
         // Part 2. Root

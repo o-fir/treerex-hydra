@@ -98,7 +98,11 @@ public class ProblemEncoder {
             // RULE 1 - initial layer cell 0 predicates from initState are true
             constraintsPerLayer.get(0).addAll(RuleConstraintEncoder.encodeRule1(allCliques, layers, problem));
             // RULE 2 - domain of cells of init layer
-            // is redundant
+            // is redundant (ony need to encode it for the SAT solver)
+            if (Hydra.solver == SolverType.SAT) {
+                constraintsPerLayer.get(0).addAll(RuleConstraintEncoder.encodeRule2(layers, problem));
+            }
+
             // RULE 3 - the last cell of init layer contains noop element
             // is redundant. The only value of the variable is noop
             // RULE 4 - initial layer cell N predicates from goalState are true

@@ -19,8 +19,9 @@ public class CommentConstraint extends HydraConstraint {
             return "% " + comment + "\n";
         } else if (Hydra.solver == SolverType.SMT) {
             return "; " + comment + "\n";
-        } else { // if (Hydra.solver == SolverType.SAT) {
-            // return "c " + comment + "\n";
+        } else if (Hydra.solver == SolverType.SAT) {
+            return "c " + comment + "\n";
+        } else {
             return "";
         }
 

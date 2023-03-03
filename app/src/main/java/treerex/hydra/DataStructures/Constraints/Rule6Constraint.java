@@ -83,8 +83,6 @@ public class Rule6Constraint extends HydraConstraint {
             
             // An implication is a disjunction of the negation of the antecedent and the consequent
 
-            // int idMethod = (ifVal + 1);
-
             // System.out.println(PrintFunctions.methodToString(ifVal, Hydra.problem2));
 
             // First, get the unique ID for the action

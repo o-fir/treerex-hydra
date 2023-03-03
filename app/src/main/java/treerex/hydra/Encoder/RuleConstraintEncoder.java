@@ -16,6 +16,7 @@ import treerex.hydra.DataStructures.Constraints.Rule14Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule14ExtraConstraint;
 import treerex.hydra.DataStructures.Constraints.Rule15Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule16Constraint;
+import treerex.hydra.DataStructures.Constraints.Rule2Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule5Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule6Constraint;
 import treerex.hydra.DataStructures.Constraints.Rule7Constraint;
@@ -29,6 +30,7 @@ import fr.uga.pddl4j.problem.operator.Action;
 import fr.uga.pddl4j.problem.operator.Method;
 import fr.uga.pddl4j.util.BitVector;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class RuleConstraintEncoder {
@@ -90,6 +92,25 @@ public class RuleConstraintEncoder {
                     }
                 }
             }
+        }
+
+        return constraints;
+    }
+
+    // RULE 2 At each position j of the initial layer, the respective inital task reductions are possible (used only for SAT solver)
+    public static List<HydraConstraint> encodeRule2(List<Layer> network,
+            Problem problem) {
+
+        List<HydraConstraint> constraints = new ArrayList<>();
+
+        Layer firstLayer = network.get(0);
+
+        constraints.add(new CommentConstraint("Rule 2"));
+
+        for (int cellI = 0; cellI < firstLayer.getCells().size() - 1; cellI++) {
+            LayerCell cell = firstLayer.getCells().get(cellI);
+            HashSet<Integer> methods = cell.getMethods();
+            constraints.add(new Rule2Constraint(cellI, methods));
         }
 
         return constraints;

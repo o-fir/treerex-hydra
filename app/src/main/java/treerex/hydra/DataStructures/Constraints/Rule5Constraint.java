@@ -112,8 +112,6 @@ public class Rule5Constraint extends HydraConstraint {
             
             // An implication is a disjunction of the negation of the antecedent and the consequent
 
-            // System.out.println(PrintFunctions.actionToString(ifVal, Hydra.problem2));
-
             // First, get the unique ID for the action
             int satUniqueIDAction = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.ACTION, ifVal);
 

@@ -12,6 +12,7 @@ import fr.uga.pddl4j.problem.operator.Method;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.DataStructures.Layer;
 import treerex.hydra.DataStructures.LayerCell;
+import treerex.hydra.Encoder.SATUniqueIDCreator;
 import treerex.hydra.Preprocessing.LiftedSasPlus.Strips2SasPlus;
 
 public class PrintFunctions {
@@ -77,6 +78,53 @@ public class PrintFunctions {
         }
         tmp += ")";
         return tmp;
+    }
+
+    public static String SATUniqueIdToString(int SATUniqueId, Problem problem) {
+
+        int layer;
+        int cell;
+        int idVariable;
+
+        // First, determinate the layer and the cell of this variable
+        int totalCells = SATUniqueId / SATUniqueIDCreator.maxNumberOfIdPerCell;
+
+        if (SATUniqueId % SATUniqueIDCreator.maxNumberOfIdPerCell == 0) {
+            totalCells--;
+        }
+
+        // With that, find the layer 
+        layer = 0;
+        int sumNumberCellsPerLayer = 0;
+        while (totalCells >= sumNumberCellsPerLayer) {
+            sumNumberCellsPerLayer += SATUniqueIDCreator.sizeEachLayer.get(layer);
+            layer++;
+        }
+        // Remove the last layer
+        layer--;
+        sumNumberCellsPerLayer -= SATUniqueIDCreator.sizeEachLayer.get(layer);
+
+        // Now, find the cell (which is the remaining)
+        cell = totalCells - sumNumberCellsPerLayer;
+
+        // Ok, now, find the variable
+        idVariable = SATUniqueId - (sumNumberCellsPerLayer + cell) * SATUniqueIDCreator.maxNumberOfIdPerCell;
+
+        String layerAndCell = "__" + layer + "_" + cell;
+
+        if (idVariable == 1) {
+            return "NOOP" + layerAndCell;
+        } else if (idVariable == 2) {
+            return "PRIMITIVE" + layerAndCell;
+        } else if (idVariable <= 2 + SATUniqueIDCreator.numberActions) {
+            return PrintFunctions.actionToString(idVariable - 3, problem) + layerAndCell;
+        } else if (idVariable <= 2 + SATUniqueIDCreator.numberActions + SATUniqueIDCreator.numberMethods) {
+            return PrintFunctions.methodToString(idVariable - 3 - SATUniqueIDCreator.numberActions, problem) + layerAndCell;
+        } else {
+            return PrintFunctions.predicateToString(idVariable - 3 - SATUniqueIDCreator.numberActions - SATUniqueIDCreator.numberMethods, problem) + layerAndCell;
+        }
+        
+
     }
 
     public static void cplexCellPredicatesToString(double[] cellCliques, Problem problem) {
