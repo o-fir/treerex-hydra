@@ -119,10 +119,17 @@ public class Validator {
                     // Get the pddlVariable object associated with this variable
                     pddlVariable varObj = SATUniqueIDCreator.convertSATUniqueIdToObj(varId);
 
+                    
+
                     switch (varObj.type) {
                         case ACTION:
-                        case METHOD:
-                            ProblemEncoder.allVariables.get(varObj.layer)[varObj.cell].setSolutionValue(varObj.id);
+                            ProblemEncoder.allVariables.get(varObj.layer)[varObj.cell].setSolutionValue(varObj.id + 1);
+                            break;
+                        case METHOD:       
+                            ProblemEncoder.allVariables.get(varObj.layer)[varObj.cell].setSolutionValue((varObj.id + 1) * -1);
+                            break;
+                        case NOOP:
+                            ProblemEncoder.allVariables.get(varObj.layer)[varObj.cell].setSolutionValue(0);
                             break;
                         default:
                             break;
