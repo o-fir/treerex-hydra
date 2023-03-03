@@ -91,15 +91,15 @@ public class Rule6Constraint extends HydraConstraint {
             int satUniqueIDMethod = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.METHOD, ifVal);
 
             for (int i = 0; i < posPrecVars.size(); i++) {
-                int satUniqueIDPrec = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PREDICATE, posPrecVals.get(i));
+                int satUniqueIDPosPrec = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PREDICATE, posPrecVals.get(i));
                 // System.out.println("Pos precond: " + PrintFunctions.predicateToString(posPrecVals.get(i), Hydra.problem2));
-                out.append("-" + satUniqueIDMethod + " " + satUniqueIDPrec + " 0\n");
+                out.append("-" + satUniqueIDMethod + " " + satUniqueIDPosPrec + " 0\n");
                 
             }
             for (int i = 0; i < negPrecVars.size(); i++) {
-                int satUniqueIDPrec = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PREDICATE, negPrecVals.get(i));
+                int satUniqueIDNegPrec = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PREDICATE, negPrecVals.get(i));
                 // System.out.println("Neg precond " + PrintFunctions.predicateToString(negPrecVals.get(i), Hydra.problem2));
-                out.append("-" + satUniqueIDMethod + " " + satUniqueIDPrec + " 0\n");
+                out.append("-" + satUniqueIDMethod + " -" + satUniqueIDNegPrec + " 0\n");
             }
 
             return out.toString();

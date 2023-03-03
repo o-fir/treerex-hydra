@@ -51,7 +51,7 @@ public class Rule13Constraint extends HydraConstraint {
             // Get the unique ID of the reduction
             int reductionUniqueId = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.METHOD, ifPartVal);
 
-            // Get the unique ID of the subtask reduction
+            // Get the unique ID of the primitive subtask
             int primitiveSubtaskUniqueId = SATUniqueIDCreator.getUniqueID(nextLayerIdx, nextCellIdx, VariableType.ACTION, thenPartVal);
 
             // Some debug 

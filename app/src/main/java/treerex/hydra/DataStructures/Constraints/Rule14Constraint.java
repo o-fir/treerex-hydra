@@ -54,6 +54,10 @@ public class Rule14Constraint extends HydraConstraint {
 
         } else if (Hydra.solver == SolverType.SAT) {
 
+            if (possibleMethods.size() == 0) {
+                return "";
+            }
+
             StringBuilder out = new StringBuilder();
 
             int layerIdx = ifPartVar.getLayerIdx();
@@ -75,7 +79,7 @@ public class Rule14Constraint extends HydraConstraint {
 
                 out.append(methodUniqueId + " ");
             }
-            out.append("0\n");
+            out.append(" 0\n");
 
             return out.toString();
         } else {

@@ -49,18 +49,15 @@ public class Rule15Constraint extends HydraConstraint {
             int currentLayerIdx = ifPartVar.getLayerIdx();
             int currentCellIdx = ifPartVar.getCellIdx();
 
-            StringBuilder noopsNextLayers = new StringBuilder();
+            int methodUniqueId = SATUniqueIDCreator.getUniqueID(currentLayerIdx, currentCellIdx, VariableType.METHOD, ifPartVal);
+
             for (IntVar vI : noops) {
                 int nextLayerIdx = currentLayerIdx + 1;
                 int nextCellIdx = vI.getCellIdx();
                 int nextNoopUniqueId = SATUniqueIDCreator.getUniqueID(nextLayerIdx, nextCellIdx, VariableType.NOOP, -1);
-                noopsNextLayers.append(nextNoopUniqueId + " ");
+
+                out.append("-" + methodUniqueId + " " + nextNoopUniqueId + " 0\n");
             }
-
-            // Get the method unique id
-            int methodUniqueId = SATUniqueIDCreator.getUniqueID(currentLayerIdx, currentCellIdx, VariableType.METHOD, ifPartVal);
-
-            out.append("-" + methodUniqueId + " " + noopsNextLayers + " 0\n");
 
             return out.toString();
         } else {

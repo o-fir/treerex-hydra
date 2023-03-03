@@ -109,7 +109,7 @@ public class Rule8Constraint extends HydraConstraint {
             StringBuilder f2t = new StringBuilder();
 
             // The formula for the frame axioms is:
-            // pred1 ^ not(pred1_next_cell) => not(primitive) v action1 v action2 v ... v actionN
+            // pred1 ^ not(pred1_next_cell) => not(primitive) v action1 v action2 v ... v actionN (with action that remove pred1)
             // Which correspond in cnf to:
             // not(pred1) v pred1_next_cell v not(primitive) v action1 v action2 v ... v actionN
 
@@ -125,7 +125,7 @@ public class Rule8Constraint extends HydraConstraint {
             // Get the primitive variable for this layer and cell
             int uniqueIdPrimitive = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.PRIMITIVE, 0);
 
-            t2f.append(uniqueIdPred + " -" + uniqueIdPredNextCell + " -" + uniqueIdPrimitive + " ");
+            t2f.append("-" + uniqueIdPred + " " + uniqueIdPredNextCell + " -" + uniqueIdPrimitive + " ");
 
             
             // Get all actions which can occurs at this cell and which can remove this fact
@@ -134,12 +134,14 @@ public class Rule8Constraint extends HydraConstraint {
                 int uniqueIdAction = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.ACTION, destructorId);
                 t2f.append(uniqueIdAction + " ");
             }
-            t2f.append("0");
+            t2f.append(" 0\n");
 
             // Now, we do the same thing with the opposite case
-            // not(pred1_next_cell) ^ pred1 => not(primitive) v action1 v action2 v ... v actionN
+            // not(pred1_next_cell) ^ pred1 => not(primitive) v action1 v action2 v ... v actionN (with action that add pred1)
+            // Which correspond in cnf to:
+            // pred1 v not(pred1_next_cell) v not(primitive) v action1 v action2 v ... v actionN
 
-            f2t.append("-" + uniqueIdPred + " " + uniqueIdPredNextCell + " -" + uniqueIdPrimitive + " ");
+            f2t.append(uniqueIdPred + " -" + uniqueIdPredNextCell + " -" + uniqueIdPrimitive + " ");
 
             // Get all actions which can occurs at this cell and which can add this fact
             for (int creatorId : creatorActions) {
@@ -147,9 +149,9 @@ public class Rule8Constraint extends HydraConstraint {
                 int uniqueIdAction = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.ACTION, creatorId);
                 f2t.append(uniqueIdAction + " ");
             }
-            f2t.append("0");
+            f2t.append(" 0\n");
 
-            return t2f.toString() + "\n" + f2t.toString() + "\n";
+            return t2f.toString() + f2t.toString();
         }
         return "N/A";
 

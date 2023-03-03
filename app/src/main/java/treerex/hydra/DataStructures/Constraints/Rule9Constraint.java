@@ -15,12 +15,14 @@ public class Rule9Constraint extends HydraConstraint {
     IntVar currentCell;
     private int idAction1;
     private int idAction2;
+    private boolean action2IsNoop;
 
     // We use -1 on action2 to indicate that it is a noop action
-    public Rule9Constraint(IntVar currentCell, int idAction1, int idAction2) {
+    public Rule9Constraint(IntVar currentCell, int idAction1, int idAction2, boolean action2IsNoop) {
         this.currentCell = currentCell;
         this.idAction1 = idAction1;
         this.idAction2 = idAction2;
+        this.action2IsNoop = action2IsNoop;
         
     }
 
@@ -39,7 +41,7 @@ public class Rule9Constraint extends HydraConstraint {
             
 
             // Get the id for the action 2 variable for this layer and cell
-            if (idAction2 == -1) {
+            if (this.action2IsNoop) {
                 uniqueIDAction2 = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.NOOP, -1);
             }
             else {

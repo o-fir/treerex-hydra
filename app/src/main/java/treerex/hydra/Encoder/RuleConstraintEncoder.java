@@ -405,10 +405,10 @@ public class RuleConstraintEncoder {
 
             for (int action1 = 0; action1 < actionArray.length; action1++) {
                 for (int action2 = action1 + 1; action2 < actionArray.length; action2++) {
-                    constraints.add(new Rule9Constraint(layerVariables[i], actionArray[action1], actionArray[action2]));
+                    constraints.add(new Rule9Constraint(layerVariables[i], actionArray[action1], actionArray[action2], false));
                 }
                 if (cell.getNoop()) {
-                    constraints.add(new Rule9Constraint(layerVariables[i], actionArray[action1], -1));
+                    constraints.add(new Rule9Constraint(layerVariables[i], actionArray[action1], -1, true));
                 }
             }
         }

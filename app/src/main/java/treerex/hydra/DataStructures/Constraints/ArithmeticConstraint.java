@@ -84,13 +84,13 @@ public class ArithmeticConstraint extends HydraConstraint {
                                 // System.out.println("Should be true: ");
                                 // System.out.println(PrintFunctions.predicateToString(fluentIdx, Hydra.problem2) + "_" + leftHandVar.getLayerIdx() + "_" + leftHandVar.getCellIdx());
 
-                                out.append(satIdVar + "0\n");
+                                out.append(satIdVar + " 0\n");
                             } else {
                                 // This fluent must be false
                                 // System.out.println("Should be false: ");
                                 // System.out.println(PrintFunctions.predicateToString(fluentIdx, Hydra.problem2) + "_" + leftHandVar.getLayerIdx() + "_" + leftHandVar.getCellIdx());
 
-                                out.append("-" + satIdVar + "0\n");
+                                out.append("-" + satIdVar + " 0\n");
                             }
                         }                        
                     } 

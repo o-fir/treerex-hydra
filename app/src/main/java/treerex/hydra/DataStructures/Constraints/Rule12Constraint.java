@@ -49,14 +49,6 @@ public class Rule12Constraint extends HydraConstraint {
             int currentLayerIdx = ifPartVar.getLayerIdx();
             int currentCellIdx = ifPartVar.getCellIdx();
 
-            StringBuilder noopsNextLayers = new StringBuilder();
-            for (IntVar vI : noops) {
-                int nextLayerIdx = currentLayerIdx + 1;
-                int nextCellIdx = vI.getCellIdx();
-                int nextNoopUniqueId = SATUniqueIDCreator.getUniqueID(nextLayerIdx, nextCellIdx, VariableType.NOOP, -1);
-                noopsNextLayers.append(nextNoopUniqueId + " ");
-            }
-
             for (Integer actionId : ifPartVar.getDomain()) {
 
                 // If this is a method, continue
@@ -75,7 +67,13 @@ public class Rule12Constraint extends HydraConstraint {
                     currentActionUniqueId = SATUniqueIDCreator.getUniqueID(currentLayerIdx, currentCellIdx, VariableType.ACTION, trueActionId);
                 }
 
-                out.append("-" + currentActionUniqueId + " " + noopsNextLayers + " 0\n");
+                for (IntVar vI : noops) {
+                    int nextLayerIdx = currentLayerIdx + 1;
+                    int nextCellIdx = vI.getCellIdx();
+                    int nextNoopUniqueId = SATUniqueIDCreator.getUniqueID(nextLayerIdx, nextCellIdx, VariableType.NOOP, -1);
+
+                    out.append("-" + currentActionUniqueId + " " + nextNoopUniqueId + " 0\n");
+                }
             }
 
             return out.toString();
