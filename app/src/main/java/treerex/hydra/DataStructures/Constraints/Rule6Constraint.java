@@ -9,6 +9,7 @@ import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
 import treerex.hydra.HelperFunctions.PrintFunctions;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 /**
  * Rule 6: If a method is executed, then all its positive and negative
@@ -61,13 +62,18 @@ public class Rule6Constraint extends HydraConstraint {
                 posPrecsStr.append("(= " + posPrecVars.get(i).getName() + " " + posPrecVals.get(i) + ") ");
             }
 
+            String strMethod = Integer.toString((ifVal + 1) * -1);
+            if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                strMethod = "m_" + Integer.toString(ifVal + 1);
+            }
+
             StringBuilder negPrecsStr = new StringBuilder();
             for (int i = 0; i < negPrecVars.size(); i++) {
                 negPrecsStr.append("(not (= " + negPrecVars.get(i).getName() + " " + negPrecVals.get(i) + ")) ");
             }
             // if (posPrecsStr.length() + negPrecsStr.length() != 0) 
             // {
-                return "(assert (=> (= " + ifVar.getName() + " " + ((ifVal + 1) * -1) + ") (and true " + posPrecsStr.toString() + " "
+                return "(assert (=> (= " + ifVar.getName() + " " + strMethod + ") (and true " + posPrecsStr.toString() + " "
                 + negPrecsStr.toString() + ")))\n";
             // } else {
             //     return "";

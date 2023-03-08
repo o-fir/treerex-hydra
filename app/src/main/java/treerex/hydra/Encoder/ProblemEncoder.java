@@ -24,6 +24,7 @@ import treerex.hydra.DataStructures.LayerCell;
 import treerex.hydra.DataStructures.OutputStatistics;
 import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.Preprocessing.LiftedSasPlus.Strips2SasPlus;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 public class ProblemEncoder {
 
@@ -123,7 +124,7 @@ public class ProblemEncoder {
                                 layers, problem));
                 // RULE 7 - an action and reduction can't happen simultaneously in a cell
                 // is redundant (only need to encode it for the SAT solver)
-                if (Hydra.solver == SolverType.SAT) {
+                if (Hydra.solver == SolverType.SAT || (Hydra.solver== SolverType.SMT && Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS))) {
                     constraintsPerLayer.get(i)
                             .addAll(RuleConstraintEncoder.encodeRule7ForOneLayer(allVariables,
                                     allCliques, i,
@@ -277,29 +278,107 @@ public class ProblemEncoder {
                 writer = new BufferedWriter(new FileWriter(mainOutputFile));
 
                 // Set the logic of the solver
-                writer.write("(set-logic QF_UFLIA)\n");
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    writer.write("(set-logic QF_DT)\n");
+                } else {
+                    writer.write("(set-logic QF_UFLIA)\n");
+                }
+                
 
                 // Indicate the solver to produce the model
                 writer.write("(set-option :produce-models true)\n");
+
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    // writer.write("(set-option :pp.bv_literals false)\n");
+                    // Define all the Primitive variable (only used if we use sorts)
+                    for (int layerIdx = 0; layerIdx < layers.size(); layerIdx++) {
+                        for (int cellIdx = 0; cellIdx < layers.get(layerIdx).getCells().size(); cellIdx++) {
+                            
+                            writer.write("(declare-const PRIMITIVE_" +  layerIdx + "_" + cellIdx + " " + "Bool)\n");
+                            
+                        }
+                    }
+                }
+
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    // Declare one datasort which will contains all actions and methods
+                    writer.write("(declare-datatypes ((ActionMethod 0)) ((\n");
+                    for (int actionIdx = 0; actionIdx < problem.getActions().size(); actionIdx++) {
+                        writer.write("a_" + (actionIdx + 1) + " ");
+                    }
+                    for (int methodIdx = 0; methodIdx < problem.getMethods().size(); methodIdx++) {
+                        writer.write("m_" + (methodIdx + 1) + " ");
+                    }
+                    // Add a noop action
+                    writer.write("a_0");
+                    writer.write(")))\n");
+
+                    // Declare a datatype for each clique as well
+                    List<List<Integer>> cliques = Strips2SasPlus.cliques;
+                    for (int cliqueId = 0; cliqueId < cliques.size(); cliqueId++) {
+                        List<Integer> clique = cliques.get(cliqueId);
+                        writer.write("(declare-datatypes ((Clique_" + cliqueId + " 0)) ((\n");
+                        for (Integer predId : clique) {
+                            writer.write("p_" + predId + " ");
+                        }
+                        writer.write(")))\n");
+                    }
+
+
+
+                    // for (HydraConstraint hydraConstraint : finalLayerConstraints) {
+                        
+                    // }
+
+                    // Add as well a function which return true if an ActionMethod is an action
+                    // writer.write("(define-fun isAction ((am ActionMethod)) Bool\n");
+                    // writer.write("(or ");
+                    // for (int actionIdx = 0; actionIdx < problem.getActions().size(); actionIdx++) {
+                    //     writer.write("(= am a_" + (actionIdx + 1) + ") ");
+                    // }
+                    // writer.write("))\n");
+                }
 
                 // Declare all the variables
                 for (int i = 0; i < allVariables.size(); i++) {
                     IntVar[] layerVars = allVariables.get(i);
                     IntVar[][] layerCliques = allCliques.get(i);
 
-                    // layer variables (e.g. cell(0,0) = deliver(pack0, truck0, city1))
-                    for (IntVar var : layerVars) {
-                        writer.write("(declare-const " + var.getName() + " Int)\n");
-                        // Declare the domain of the variable as well
-                        writer.write("(assert (or ");
-                        for (Integer domainValue : var.getDomain()) {
-                            writer.write(" (= " + var.getName() + " " + domainValue + ")");
+                    if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+
+                        for (IntVar var : layerVars) {
+
+                            // Now declare our variable and indicate its type
+                            writer.write("(declare-const " + var.getName() + " ActionMethod)\n");
+                            // Indicate the domain of the variable
+
+                            writer.write("(assert (or ");
+                            for (Integer domainValue : var.getDomain()) {
+
+                                String domainValueStr;
+                                if (domainValue < 0) {
+                                    
+                                    domainValueStr = "m_" + Math.abs(domainValue);
+                                } else {
+                                    domainValueStr = "a_" + domainValue;
+                                }
+                                writer.write(" (= " + var.getName() + " " + domainValueStr + ")");
+                            }
+                            writer.write("))\n");
                         }
-                        writer.write("))\n");
-                    }
-                    // predicate variables (e.g. clique(0,0,0) = truck0_at_city0)
-                    for (IntVar[] cellCliques : layerCliques) {
-                        for (IntVar var : cellCliques) {
+
+                        // predicate variables (e.g. clique(0,0,0) = truck0_at_city0)
+                        for (IntVar[] cellCliques : layerCliques) {
+                            for (IntVar var : cellCliques) {
+                                // Get the Id of the clique
+                                int cliqueId = var.getCliqueID();
+                                writer.write("(declare-const " + var.getName() + " Clique_" + cliqueId + ")\n");
+                            }
+                        }
+
+                    } else {
+                        // layer variables (e.g. cell(0,0) = deliver(pack0, truck0, city1))
+                        for (IntVar var : layerVars) {
                             writer.write("(declare-const " + var.getName() + " Int)\n");
                             // Declare the domain of the variable as well
                             writer.write("(assert (or ");
@@ -307,6 +386,19 @@ public class ProblemEncoder {
                                 writer.write(" (= " + var.getName() + " " + domainValue + ")");
                             }
                             writer.write("))\n");
+                        }
+
+                        // predicate variables (e.g. clique(0,0,0) = truck0_at_city0)
+                        for (IntVar[] cellCliques : layerCliques) {
+                            for (IntVar var : cellCliques) {
+                                writer.write("(declare-const " + var.getName() + " Int)\n");
+                                // Declare the domain of the variable as well
+                                writer.write("(assert (or ");
+                                for (Integer domainValue : var.getDomain()) {
+                                    writer.write(" (= " + var.getName() + " " + domainValue + ")");
+                                }
+                                writer.write("))\n");
+                            }
                         }
                     }
                 }

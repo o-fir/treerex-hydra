@@ -6,6 +6,7 @@ import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 /**
  * Rule 11: If an action occurs in a cell, then it will also occur
@@ -30,8 +31,26 @@ public class Rule11Constraint extends HydraConstraint {
             return tmp;
 
         } else if (Hydra.solver == SolverType.SMT) {
+            if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+
+                StringBuilder out = new StringBuilder();
+
+                // Ugly way to do it
+                for (Integer actionId : ifPart.getDomain()) {
+                    if (actionId < 0) {
+                        continue;
+                    }
+
+                    String strAction = "a_" + actionId;
+                    out.append("(assert (=> (= " + ifPart.getName() + " " + strAction + ") (= " + thenPart.getName()
+                            + " " + strAction + ")))\n");
+                }
+                return out.toString();
+            }
+            else {
             return "(assert (=> (>= " + ifPart.getName() + " 0) (= " + ifPart.getName() + " " + thenPart.getName()
                     + ")))\n";
+            }
         } else if (Hydra.solver == SolverType.SAT) {
 
             StringBuilder out = new StringBuilder();

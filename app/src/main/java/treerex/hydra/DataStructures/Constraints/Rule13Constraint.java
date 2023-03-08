@@ -7,6 +7,7 @@ import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
 import treerex.hydra.HelperFunctions.PrintFunctions;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 /**
  * If a reduction occurs in a cell, then if its subtask i is primitive, this
@@ -38,8 +39,16 @@ public class Rule13Constraint extends HydraConstraint {
             return tmp;
 
         } else if (Hydra.solver == SolverType.SMT) {
-            return "(assert (=> (= " + ifPartVar.getName() + " " + ((ifPartVal + 1) * -1) + ") (= "
-                    + thenPartVar.getName() + " " + (thenPartVal + 1) + ")))\n";
+
+            if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                return "(assert (=> (= " + ifPartVar.getName() + " m_" + (ifPartVal + 1) + ") (= "
+                + thenPartVar.getName() + " a_" + (thenPartVal + 1) + ")))\n";
+            }
+            else {
+                return "(assert (=> (= " + ifPartVar.getName() + " " + ((ifPartVal + 1) * -1) + ") (= "
+                + thenPartVar.getName() + " " + (thenPartVal + 1) + ")))\n";
+            }
+
         } else if (Hydra.solver == SolverType.SAT) {
 
             int layerIdx = ifPartVar.getLayerIdx();

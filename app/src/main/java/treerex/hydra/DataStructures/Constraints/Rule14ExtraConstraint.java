@@ -6,6 +6,7 @@ import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
+import treerex.hydra.HelperFunctions.PrintFunctions;
 
 
 /**
@@ -52,6 +53,5 @@ public class Rule14ExtraConstraint extends HydraConstraint {
             return "-" + reductionUniqueId + " " + noopActionUniqueId + " 0\n";
         }
         return "N/A";
-
     }
 }

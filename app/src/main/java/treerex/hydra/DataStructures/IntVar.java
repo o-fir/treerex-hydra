@@ -44,6 +44,10 @@ public class IntVar {
         return this.isClique;
     }
 
+    public int getCliqueID() {
+        return this.cliqueID;
+    }
+
     public int getLayerIdx() {
         return this.layerIdx;
     }

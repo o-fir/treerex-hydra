@@ -359,6 +359,10 @@ public class RuleConstraintEncoder {
             for (Integer idMethod : cell.getMethods()) {
                 constraints.add(new Rule7Constraint(layerVariables[i], idMethod, VariableType.METHOD));
             }
+
+            if (cell.getNoop()) {
+                constraints.add(new Rule7Constraint(layerVariables[i], -1, VariableType.NOOP));
+            }
         }
 
         return constraints;
@@ -496,6 +500,7 @@ public class RuleConstraintEncoder {
         IntVar[] nextLayerVariables = allVariables.get(layerIndex + 1);
         List<HydraConstraint> constraints = new ArrayList<>();
         System.out.println("LAYER " + layerIndex);
+        constraints.add(new CommentConstraint("Rule 13 14 15"));
         for (int i = 0; i < layer.getCells().size(); i++) {
             LayerCell cell = layer.getCells().get(i);
             int next = layer.getNext(i);

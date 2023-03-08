@@ -9,6 +9,7 @@ import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
 import treerex.hydra.HelperFunctions.PrintFunctions;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 /**
  * Rule 6: If an action is executed, then all its positive and negative
@@ -78,29 +79,56 @@ public class Rule5Constraint extends HydraConstraint {
         } else if (Hydra.solver == SolverType.SMT) {
             StringBuilder posPrecsStr = new StringBuilder("(and true ");
             for (int i = 0; i < posPrecVars.size(); i++) {
-                posPrecsStr.append("(= " + posPrecVars.get(i).getName() + " " + posPrecVals.get(i) + ") ");
+
+                String predicateStr = Integer.toString(posPrecVals.get(i));
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    predicateStr = "p_" + predicateStr;
+                }
+
+                posPrecsStr.append("(= " + posPrecVars.get(i).getName() + " " + predicateStr + ") ");
             }
             posPrecsStr.append(")");
 
             StringBuilder negPrecsStr = new StringBuilder("(and true ");
             for (int i = 0; i < negPrecVars.size(); i++) {
-                negPrecsStr.append("(not (= " + negPrecVars.get(i).getName() + " " + negPrecVals.get(i) + ")) ");
+
+                String predicateStr = Integer.toString(negPrecVals.get(i));
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    predicateStr = "p_" + predicateStr;
+                }
+
+                negPrecsStr.append("(not (= " + negPrecVars.get(i).getName() + " " + predicateStr + ")) ");
             }
             negPrecsStr.append(")");
 
             StringBuilder posEffsStr = new StringBuilder("(and true ");
             for (int i = 0; i < posEffVars.size(); i++) {
-                posEffsStr.append("(= " + posEffVars.get(i).getName() + " " + posEffVals.get(i) + ") ");
+
+                String predicateStr = Integer.toString(posEffVals.get(i));
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    predicateStr = "p_" + predicateStr;
+                }
+                posEffsStr.append("(= " + posEffVars.get(i).getName() + " " + predicateStr + ") ");
             }
             posEffsStr.append(")");
 
             StringBuilder negEffsStr = new StringBuilder("(and true ");
             for (int i = 0; i < negEffVars.size(); i++) {
-                negEffsStr.append("(not (= " + negEffVars.get(i).getName() + " " + negEffVals.get(i) + ")) ");
+
+                String predicateStr = Integer.toString(negEffVals.get(i));
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    predicateStr = "p_" + predicateStr;
+                }
+                negEffsStr.append("(not (= " + negEffVars.get(i).getName() + " " + predicateStr + ")) ");
             }
             negEffsStr.append(")");
 
-            return "(assert (=> (= " + ifVar.getName() + " " + (ifVal + 1) + ") (and " + posPrecsStr.toString() + " "
+            String strAction = Integer.toString(ifVal + 1);
+            if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                strAction = "a_" + strAction;
+            }
+
+            return "(assert (=> (= " + ifVar.getName() + " " + strAction + ") (and " + posPrecsStr.toString() + " "
                     + negPrecsStr.toString() + " " + posEffsStr.toString() + " " + negEffsStr.toString() + ")))\n";
 
         } else if (Hydra.solver == SolverType.SAT) {

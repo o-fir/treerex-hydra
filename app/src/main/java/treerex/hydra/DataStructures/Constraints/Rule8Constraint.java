@@ -10,6 +10,7 @@ import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
 import treerex.hydra.HelperFunctions.PrintFunctions;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 /**
  * Rule 8: Frame axioms: If a fact change between two consecutive cells then
@@ -72,35 +73,66 @@ public class Rule8Constraint extends HydraConstraint {
             StringBuilder descructorActionStr = new StringBuilder();
             
             if (destructorActions.size() > 0) {
-                descructorActionStr.append("(or (< " + currentCellVar.getName() + " 0) ");
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    descructorActionStr.append("(or (not PRIMITIVE_" + currentCellVar.getLayerIdx() + "_" + currentCellVar.getCellIdx() + ") ");
+                } else {
+                    descructorActionStr.append("(or (< " + currentCellVar.getName() + " 0) ");
+                }
+                
                 for (int destructorId : destructorActions) {
-                    descructorActionStr.append("(= " + currentCellVar.getName() + " " + (destructorId + 1) + ")");
+                    String strAction = Integer.toString(destructorId + 1);
+                    if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                        strAction = "a_" + strAction;
+                    }
+                    descructorActionStr.append("(= " + currentCellVar.getName() + " " + strAction + ")");
                 }
                 descructorActionStr.append(") ");
             }
             else {
-                descructorActionStr.append("(< " + currentCellVar.getName() + " 0)");
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    descructorActionStr.append(" (not PRIMITIVE_" + currentCellVar.getLayerIdx() + "_" + currentCellVar.getCellIdx() + ")");
+                } else {
+                    descructorActionStr.append("(< " + currentCellVar.getName() + " 0)");
+                }
+                
+            }
+
+            String predicateIdStr = Integer.toString(predicateId);
+            if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                predicateIdStr = "p_" + predicateIdStr;
             }
 
 
-            String t2f = "(assert (=> (and (= " + currentCellCliqueVar.getName() + " " + predicateId + ") (not (= "
-                    + nextCellCliqueVar.getName() + " " + predicateId + "))) " + descructorActionStr.toString() + "))\n";
+            String t2f = "(assert (=> (and (= " + currentCellCliqueVar.getName() + " " + predicateIdStr + ") (not (= "
+                    + nextCellCliqueVar.getName() + " " + predicateIdStr + "))) " + descructorActionStr.toString() + "))\n";
 
             StringBuilder creatorActionStr = new StringBuilder();
 
             if (creatorActions.size() > 0) {
-                creatorActionStr.append("(or (< " + currentCellVar.getName() + " 0) ");
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    creatorActionStr.append("(or (not PRIMITIVE_" + currentCellVar.getLayerIdx() + "_" + currentCellVar.getCellIdx() + ") ");
+                } else {
+                    creatorActionStr.append("(or (< " + currentCellVar.getName() + " 0) ");
+                }
                 for (int creatorId : creatorActions) {
-                    creatorActionStr.append("(= " + currentCellVar.getName() + " " + (creatorId + 1) + ")");
+                    String strAction = Integer.toString(creatorId + 1);
+                    if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                        strAction = "a_" + strAction;
+                    }
+                    creatorActionStr.append("(= " + currentCellVar.getName() + " " + strAction + ")");
                 }
                 creatorActionStr.append(") ");
             }
             else {
-                creatorActionStr.append("(< " + currentCellVar.getName() + " 0)");
+                if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                    creatorActionStr.append(" (not PRIMITIVE_" + currentCellVar.getLayerIdx() + "_" + currentCellVar.getCellIdx() + ")");
+                } else {
+                    creatorActionStr.append("(< " + currentCellVar.getName() + " 0)");
+                }
             }
 
-            String f2t = "(assert (=> (and (not (= " + currentCellCliqueVar.getName() + " " + predicateId + ")) (= "
-                    + nextCellCliqueVar.getName() + " " + predicateId + ")) " + creatorActionStr.toString() + "))\n";
+            String f2t = "(assert (=> (and (not (= " + currentCellCliqueVar.getName() + " " + predicateIdStr + ")) (= "
+                    + nextCellCliqueVar.getName() + " " + predicateIdStr + ")) " + creatorActionStr.toString() + "))\n";
 
             return t2f + f2t + "\n";
         } else if (Hydra.solver == SolverType.SAT) {

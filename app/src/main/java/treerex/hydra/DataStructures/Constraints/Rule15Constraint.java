@@ -8,6 +8,7 @@ import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 /**
  * Any child cells no defined by a method of the parent cell must be filled with Noop actions.
@@ -36,13 +37,26 @@ public class Rule15Constraint extends HydraConstraint {
             return out;
 
         } else if (Hydra.solver == SolverType.SMT) {
-            StringBuilder noopsAtChildrenCells = new StringBuilder("(and true ");
-            for (IntVar vI : noops) {
-                noopsAtChildrenCells.append("(= " + vI.getName() + " 0) ");
+
+            if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                StringBuilder noopsAtChildrenCells = new StringBuilder("(and true ");
+                for (IntVar vI : noops) {
+                    noopsAtChildrenCells.append("(= " + vI.getName() + " a_0) ");
+                }
+                noopsAtChildrenCells.append(")");
+                return "(assert (=> (= " + ifPartVar.getName() + " m_" + (ifPartVal + 1) + ") " + noopsAtChildrenCells
+                        + "))\n";
             }
-            noopsAtChildrenCells.append(")");
-            return "(assert (=> (= " + ifPartVar.getName() + " " + ((ifPartVal + 1) * -1) + ") " + noopsAtChildrenCells
-                    + "))\n";
+            else {
+                StringBuilder noopsAtChildrenCells = new StringBuilder("(and true ");
+                for (IntVar vI : noops) {
+                    noopsAtChildrenCells.append("(= " + vI.getName() + " 0) ");
+                }
+                noopsAtChildrenCells.append(")");
+                return "(assert (=> (= " + ifPartVar.getName() + " " + ((ifPartVal + 1) * -1) + ") " + noopsAtChildrenCells
+                        + "))\n";
+            }
+
         } else if (Hydra.solver == SolverType.SAT) {
             StringBuilder out = new StringBuilder();
 

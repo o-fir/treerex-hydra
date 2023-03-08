@@ -23,6 +23,7 @@ import treerex.hydra.DataStructures.Layer;
 import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.HelperFunctions.PrintFunctions;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 public class Validator {
     static int counter = 1;
@@ -87,7 +88,24 @@ public class Validator {
                     String valueStr = dataLineValue[valueIdx].substring(0,
                             dataLineValue[valueIdx].length() - numParenthesisToRemove);
 
-                    int value = Integer.parseInt(valueStr);
+                    int value;
+                    if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                        // Check if it is a method of an action
+                        if (valueStr.startsWith("m_")) {
+                            valueStr = valueStr.substring(2);
+                            value = Integer.parseInt(valueStr) * -1;
+                        } else if (valueStr.startsWith("a_")) {
+                            valueStr = valueStr.substring(2);
+                            value = Integer.parseInt(valueStr);
+                        } else {
+                            continue;
+                        }
+                    }
+                    else {
+                        value = Integer.parseInt(valueStr);
+                    }
+
+                    
                     if (isNegative) {
                         value = -value;
                     }

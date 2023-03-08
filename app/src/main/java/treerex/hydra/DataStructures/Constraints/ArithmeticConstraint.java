@@ -7,6 +7,7 @@ import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
 import treerex.hydra.HelperFunctions.PrintFunctions;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 public class ArithmeticConstraint extends HydraConstraint {
     private IntVar leftHandVar;
@@ -43,9 +44,19 @@ public class ArithmeticConstraint extends HydraConstraint {
             // TODO implement SMT solver
             if (rightHandVar == null) {
                 if (operator == "!=") {
-                    return "(assert (not (=" + " " + leftHandVar.getName() + " " + constantVal + ")))\n";
+                    if (leftHandVar.isClique() && Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                        return "(assert (not (=" + " " + leftHandVar.getName() + " p_" + constantVal + ")))\n";
+                    } else {
+                        return "(assert (not (=" + " " + leftHandVar.getName() + " " + constantVal + ")))\n";
+                    }
+                
                 } else {
-                    return "(assert (" + operator + " " + leftHandVar.getName() + " " + constantVal + "))\n";
+                    if (leftHandVar.isClique() && Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                        return "(assert (" + operator + " " + leftHandVar.getName() + " p_" + constantVal + "))\n";
+                    } else {
+                        return "(assert (" + operator + " " + leftHandVar.getName() + " " + constantVal + "))\n";
+                    }
+                    
                 }
                 
             } else {
@@ -82,8 +93,6 @@ public class ArithmeticConstraint extends HydraConstraint {
                             if (fluentIdx == constantVal) {
                                 // This fluent must be true
                                 // System.out.println("Should be true: ");
-                                // System.out.println(PrintFunctions.predicateToString(fluentIdx, Hydra.problem2) + "_" + leftHandVar.getLayerIdx() + "_" + leftHandVar.getCellIdx());
-
                                 out.append(satIdVar + " 0\n");
                             } else {
                                 // This fluent must be false
@@ -138,6 +147,30 @@ public class ArithmeticConstraint extends HydraConstraint {
 
                     }
                 }
+            }
+            else if (operator == "!=") {
+                // Check the variable type of the left and right hand size
+                VariableType varTypeLeftHandSize;
+                VariableType varTypeRightHandSize;
+
+                if (leftHandVar.isClique()) {
+                    varTypeLeftHandSize = VariableType.PREDICATE;
+                } else {
+                    System.out.println("NOT IMPLEMENTED !!");
+                    System.exit(1);
+                }
+
+                if (rightHandVar != null) {
+                    System.out.println("NOT IMPLEMENTED !!");
+                    System.exit(1);
+                }
+
+                // Ok, we do have a clique variable which should not be equal to a specific predicate. So we just have to say that this predicate is false here.
+
+                // Get the unique ID of this predicate
+                int satIdVarRightHandSize = SATUniqueIDCreator.getUniqueID(leftHandVar.getLayerIdx(), leftHandVar.getCellIdx(), VariableType.PREDICATE, constantVal);
+
+                out.append("-" + satIdVarRightHandSize + " 0\n");
             }
             else {
                 System.out.println("NOT IMPLEMENTED !!");

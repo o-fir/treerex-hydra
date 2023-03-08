@@ -1,11 +1,14 @@
 package treerex.hydra.DataStructures.Constraints;
 
+import org.hamcrest.core.Is;
+
 import treerex.hydra.Hydra;
 import treerex.hydra.DataStructures.HydraConstraint;
 import treerex.hydra.DataStructures.IntVar;
 import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 /**
  * Rule 7: Each action is primitive, each method is not primitive
@@ -45,13 +48,31 @@ public class Rule7Constraint extends HydraConstraint {
                     int uniqueIdMethodVar = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.METHOD, idActionOrMethod);
                     out.append("-" + uniqueIdMethodVar + " -" + uniqueIdPritimitiveVar + " 0\n");
                     break;
+                case NOOP:
+                    // Get the unique ID for the noop variable for this layer and cell
+                    int uniqueIdNoopVar = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.NOOP, -1);
+                    out.append("-" + uniqueIdNoopVar + " " + uniqueIdPritimitiveVar + " 0\n");
+                    break;
                 default:
-                    System.out.println("Error: Rule 7 is only implemented for actions and methods");
+                    System.out.println("Error: Rule 7 is only implemented for actions, methods and noop");
                     System.exit(1);
             }
 
             return out.toString();
 
+        }
+        else if (Hydra.solver == SolverType.SMT && Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+            switch (this.type) {
+                case ACTION:
+                    return "(assert (=> (= " + currentCell.getName() + " a_" + (idActionOrMethod + 1) + ") PRIMITIVE_" + currentCell.getLayerIdx() + "_" + currentCell.getCellIdx() + "))\n";
+                case METHOD:
+                    return "(assert (=> (= " + currentCell.getName() + " m_" + (idActionOrMethod + 1) + ") (not PRIMITIVE_" + currentCell.getLayerIdx() + "_" + currentCell.getCellIdx() + ")))\n";
+                case NOOP:
+                    return "(assert (=> (= " + currentCell.getName() + " a_0) PRIMITIVE_" + currentCell.getLayerIdx() + "_" + currentCell.getCellIdx() + "))\n";
+                default:
+                    System.out.println("Error: Rule 7 is only implemented for actions, methods and noop");
+                    System.exit(1);
+            }
         }
         else {
             System.out.println("Error: Rule 7 is only implemented for the SAT solver");

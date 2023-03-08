@@ -15,3 +15,6 @@ minizincGenFiles
 
 # Ignore all .smt files
 *.SMT
+
+# Ignore all .dimacs files
+*.dimacs

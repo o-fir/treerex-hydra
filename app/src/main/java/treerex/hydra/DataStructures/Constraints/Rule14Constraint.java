@@ -9,6 +9,7 @@ import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.DataStructures.VariableType;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
 import treerex.hydra.HelperFunctions.PrintFunctions;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 /**
  * If a reduction occurs in a cell, then if its subtask i is not primitive, one
@@ -43,19 +44,40 @@ public class Rule14Constraint extends HydraConstraint {
             return out;
 
         } else if (Hydra.solver == SolverType.SMT) {
-            StringBuilder possibleReductions = new StringBuilder("(or false ");
-            for (Integer i : possibleMethods) {
-                possibleReductions.append(" (= " + thenPartVar.getName() + " " + ((i + 1) * -1) + ")");
-            }
-            possibleReductions.append(")");
 
-            return "(assert (=> (= " + ifPartVar.getName() + " " + ((ifPartVal + 1) * -1) + ") "
-                    + possibleReductions.toString() + "))\n";
+            if (Hydra.solverConfigs.contains(SolverConfig.SMT_USE_SORTS)) {
+                StringBuilder possibleReductions = new StringBuilder("(or false ");
+                for (Integer i : possibleMethods) {
+                    possibleReductions.append(" (= " + thenPartVar.getName() + " m_" + (i + 1) + ")");
+                }
+                possibleReductions.append(")");
+    
+                return "(assert (=> (= " + ifPartVar.getName() + " m_" + (ifPartVal + 1) + ") "
+                        + possibleReductions.toString() + "))\n";
+            }
+            else {
+                StringBuilder possibleReductions = new StringBuilder("(or false ");
+                for (Integer i : possibleMethods) {
+                    possibleReductions.append(" (= " + thenPartVar.getName() + " " + ((i + 1) * -1) + ")");
+                }
+                possibleReductions.append(")");
+    
+                return "(assert (=> (= " + ifPartVar.getName() + " " + ((ifPartVal + 1) * -1) + ") "
+                        + possibleReductions.toString() + "))\n";
+            }
 
         } else if (Hydra.solver == SolverType.SAT) {
 
             if (possibleMethods.size() == 0) {
-                return "";
+                // Not sure what to do here. If I take the same approch as CSP and SMT, then
+                // if there is not subtasks here, the reduction must be false
+
+                int layerIdx = ifPartVar.getLayerIdx();
+                int cellIdx = ifPartVar.getCellIdx();
+
+                int reductionUniqueId = SATUniqueIDCreator.getUniqueID(layerIdx, cellIdx, VariableType.METHOD, ifPartVal);
+
+                return "-" + reductionUniqueId + " 0\n";
             }
 
             StringBuilder out = new StringBuilder();

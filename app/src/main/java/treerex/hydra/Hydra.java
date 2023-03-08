@@ -4,6 +4,7 @@
 package treerex.hydra;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 
 import fr.uga.pddl4j.parser.DefaultParsedProblem;
@@ -17,6 +18,7 @@ import treerex.hydra.DataStructures.SolverType;
 import treerex.hydra.Encoder.ProblemEncoder;
 import treerex.hydra.Encoder.SATUniqueIDCreator;
 import treerex.hydra.Preprocessing.NetworkGenerator;
+import treerex.hydra.SolverConfig.SolverConfig;
 
 public class Hydra {
 
@@ -29,6 +31,8 @@ public class Hydra {
      */
     public static String projectDir = "";
     public static SolverType solver;
+    // Configurations used by the solver
+    public static HashSet<SolverConfig> solverConfigs = new HashSet<SolverConfig>();
     public static DefaultProblem problem2;
 
     public static void main(String[] args) {
@@ -47,9 +51,18 @@ public class Hydra {
                     p };
         }
         // Otherwise, we need 2 arguments - domain and proble mpath
-        else if (args.length != 3) {
+        else if (args.length < 3) {
             System.out.println("Error. Need 3 arguments - sat/smt/csp AND domainPath AND problemPath");
             return;
+        }
+
+        // All further argument will be for the configuration of the solver
+        for (int i = 3; i < args.length; i++) {
+            for (SolverConfig solverConf : SolverConfig.values()) {
+                if (args[i].equalsIgnoreCase(solverConf.name())) {
+                    solverConfigs.add(solverConf);                
+                }
+            }
         }
 
         if (args[0].toLowerCase().equals("csp")) {

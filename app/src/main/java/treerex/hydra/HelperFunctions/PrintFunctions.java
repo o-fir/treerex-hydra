@@ -123,8 +123,6 @@ public class PrintFunctions {
         } else {
             return PrintFunctions.predicateToString(idVariable - 3 - SATUniqueIDCreator.numberActions - SATUniqueIDCreator.numberMethods, problem) + layerAndCell;
         }
-        
-
     }
 
     public static void cplexCellPredicatesToString(double[] cellCliques, Problem problem) {
